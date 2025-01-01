@@ -1,0 +1,15 @@
+[package]
+name = "compute"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+anyhow = "1.0.95"
+crossbeam-channel = "0.5.14"
+encase = "0.10.0"
+nalgebra = "0.33.2"
+pollster = "0.4.0"
+wgpu = "23.0.1"
+
+[workspace]
+members = ["examples/basic", "examples/mandelbrot"]
