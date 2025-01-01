@@ -1,13 +1,18 @@
-use std::{marker::PhantomData, mem};
+use std::marker::PhantomData;
 
 use anyhow::Result;
 use encase::{
     internal::{CreateFrom, WriteInto},
     ShaderType,
 };
-use wgpu::{Buffer, BufferDescriptor, BufferUsages, MaintainBase, MapMode};
+use wgpu::{
+    util::{BufferInitDescriptor, DeviceExt},
+    BindingResource, Buffer, BufferDescriptor, BufferUsages, MaintainBase, MapMode,
+};
 
 use crate::gpu::Gpu;
+
+use super::Bindable;
 
 pub struct StorageBuffer<T> {
     pub(crate) buffer: Buffer,
@@ -24,7 +29,7 @@ impl<T: ShaderType + WriteInto + CreateFrom> StorageBuffer<T> {
         Ok(())
     }
 
-    pub fn download(&self, gpu: &mut Gpu) -> Result<T> {
+    pub fn download(&self, gpu: &Gpu) -> Result<T> {
         let staging = gpu.device.create_buffer(&BufferDescriptor {
             label: None,
             size: self.buffer.size(),
@@ -48,5 +53,33 @@ impl<T: ShaderType + WriteInto + CreateFrom> StorageBuffer<T> {
         let mut store = encase::DynamicStorageBuffer::new(data);
 
         Ok(store.create()?)
+    }
+}
+
+impl Gpu {
+    pub fn create_storage<T>(&mut self, data: T) -> Result<StorageBuffer<T>>
+    where
+        T: ShaderType + WriteInto + CreateFrom,
+    {
+        let mut buffer = Vec::new();
+        let mut storage = encase::StorageBuffer::new(&mut buffer);
+        storage.write(&data)?;
+
+        let buffer = self.device.create_buffer_init(&BufferInitDescriptor {
+            label: None,
+            usage: BufferUsages::COPY_DST | BufferUsages::COPY_SRC | BufferUsages::STORAGE,
+            contents: &buffer,
+        });
+
+        Ok(StorageBuffer {
+            buffer,
+            _type: PhantomData,
+        })
+    }
+}
+
+impl<T> Bindable for StorageBuffer<T> {
+    fn as_entire_binding(&self) -> BindingResource<'_> {
+        self.buffer.as_entire_binding()
     }
 }

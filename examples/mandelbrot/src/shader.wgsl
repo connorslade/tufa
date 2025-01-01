@@ -1,11 +1,9 @@
-@group(0)
-@binding(0)
-var<storage, read_write> data: Data;
+@group(0) @binding(0) var<uniform> ctx: Uniform;
+@group(0) @binding(1) var<storage, read_write> data: array<u32>;
 
-struct Data {
+struct Uniform {
     size: vec2<u32>,
-    zoom: f32,
-    image: array<vec3<f32>>
+    zoom: f32
 }
 
 const PI: f32 = 3.1415926538;
@@ -16,9 +14,13 @@ const POI: vec2<f32> = vec2(-1.7864323556423187, -2.905726428359401e-7);
 @compute
 @workgroup_size(8, 8, 1)
 fn main(@builtin(global_invocation_id) pos: vec3<u32>) {
-    var zoom = 4.0 / exp(data.zoom);
-    var c = (vec2(f32(pos.x), f32(pos.y)) / f32(data.size.x) - 0.5) * zoom + POI;
-    data.image[data.size.x * pos.y + pos.x] = evaluate(c);
+    var zoom = 4.0 / exp(ctx.zoom);
+    var c = (vec2(f32(pos.x), f32(pos.y)) / f32(ctx.size.x) - 0.5) * zoom + POI;
+
+    var color = evaluate(c);
+    var packed = pack4x8unorm(vec4(color, 0.0));
+
+    data[ctx.size.x * pos.y + pos.x] = packed;
 }
 
 fn evaluate(c: vec2<f32>) -> vec3<f32> {

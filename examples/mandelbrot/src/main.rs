@@ -8,58 +8,55 @@ use compute::{
     },
     gpu::Gpu,
 };
-use image::{Pixel, Rgb};
+use image::{ImageBuffer, Rgb};
 
 #[derive(ShaderType)]
-struct Data {
+struct Uniform {
     size: Vector2<u32>,
     zoom: f32,
-    #[size(runtime)]
-    data: Vec<Vector3<f32>>,
 }
 
 const SIZE: Vector2<u32> = Vector2::new(4096, 4096);
-const ZOOM: f32 = 0.0;
 
 fn main() -> Result<()> {
     let mut gpu = Gpu::init()?;
 
-    let buffer = gpu.create_buffer(Data {
+    let uniform = gpu.create_uniform(Uniform {
         size: SIZE,
-        zoom: ZOOM,
-        data: vec![Vector3::zeros(); (SIZE.x * SIZE.y) as usize],
+        zoom: 0.0,
     })?;
+    let buffer = gpu.create_storage(vec![0; (SIZE.x * SIZE.y) as usize])?;
 
     let pipeline = gpu
         .compute_pipeline(ShaderSource::Wgsl(include_str!("shader.wgsl").into()))
+        .bind_buffer(&uniform)
         .bind_buffer(&buffer)
         .finish();
 
-    for zoom_idx in 0..10_00 {
-        let zoom = zoom_idx as f32 / 100.0;
-        buffer.upload(
-            &mut gpu,
-            Data {
+    for zoom in 0..10_0 {
+        uniform.upload(
+            &gpu,
+            Uniform {
                 size: SIZE,
-                zoom: zoom,
-                data: vec![Vector3::zeros(); (SIZE.x * SIZE.y) as usize],
+                zoom: zoom as f32 / 10.0,
             },
         )?;
 
-        pipeline.dispatch(&mut gpu, Vector3::new(SIZE.x / 8, SIZE.y / 8, 1));
+        pipeline.dispatch(&gpu, Vector3::new(SIZE.x / 8, SIZE.y / 8, 1));
 
-        let result = buffer.download(&mut gpu)?;
+        let result = buffer.download(&gpu)?;
 
-        let mut img = image::ImageBuffer::new(SIZE.x, SIZE.y);
-        for x in 0..SIZE.x as usize {
-            for y in 0..SIZE.y as usize {
-                let color = result.data[y * SIZE.x as usize + x];
-                let pixel = *Rgb::from_slice(color.map(|x| (x * 255.0) as u8).as_slice());
-                img.put_pixel(x as u32, y as u32, pixel);
-            }
-        }
+        let img = ImageBuffer::from_par_fn(SIZE.x, SIZE.y, |x, y| {
+            let color = result[(y * SIZE.x + x) as usize];
 
-        img.save(format!("rec/out-{zoom_idx:0>4}.png"))?;
+            let r = (color & 0xFF) as u8;
+            let g = (color >> 8 & 0xFF) as u8;
+            let b = (color >> 16 & 0xFF) as u8;
+
+            Rgb([r, g, b])
+        });
+
+        img.save(format!("rec/out-{zoom:0>4}.png"))?;
     }
 
     Ok(())

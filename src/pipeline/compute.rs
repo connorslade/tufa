@@ -1,7 +1,10 @@
 use nalgebra::Vector3;
-use wgpu::{BindGroup, BindGroupDescriptor, BindGroupEntry, ComputePassDescriptor};
+use wgpu::{
+    BindGroup, BindGroupDescriptor, BindGroupEntry, ComputePassDescriptor,
+    ComputePipelineDescriptor, PipelineCompilationOptions, ShaderModuleDescriptor, ShaderSource,
+};
 
-use crate::{buffer::StorageBuffer, gpu::Gpu};
+use crate::{buffer::Bindable, gpu::Gpu};
 
 pub struct ComputePipelineBuilder<'a> {
     pub(crate) gpu: &'a mut Gpu,
@@ -11,10 +14,10 @@ pub struct ComputePipelineBuilder<'a> {
 }
 
 impl<'a> ComputePipelineBuilder<'a> {
-    pub fn bind_buffer<T>(mut self, entry: &'a StorageBuffer<T>) -> Self {
+    pub fn bind_buffer(mut self, entry: &'a impl Bindable) -> Self {
         self.entries.push(BindGroupEntry {
             binding: self.entries.len() as u32,
-            resource: entry.buffer.as_entire_binding(),
+            resource: entry.as_entire_binding(),
         });
         self
     }
@@ -39,12 +42,39 @@ pub struct ComputePipeline {
 }
 
 impl ComputePipeline {
-    pub fn dispatch(&self, gpu: &mut Gpu, workgroups: Vector3<u32>) {
+    pub fn dispatch(&self, gpu: &Gpu, workgroups: Vector3<u32>) {
         gpu.dispatch(|encoder| {
             let mut compute_pass = encoder.begin_compute_pass(&ComputePassDescriptor::default());
             compute_pass.set_pipeline(&self.pipeline);
             compute_pass.set_bind_group(0, Some(&self.bind_group), &[]);
             compute_pass.dispatch_workgroups(workgroups.x, workgroups.y, workgroups.z);
         });
+    }
+}
+
+impl Gpu {
+    pub fn compute_pipeline(&mut self, source: ShaderSource) -> ComputePipelineBuilder {
+        let module = self.device.create_shader_module(ShaderModuleDescriptor {
+            label: None,
+            source,
+        });
+
+        let pipeline = self
+            .device
+            .create_compute_pipeline(&ComputePipelineDescriptor {
+                label: None,
+                layout: None,
+                module: &module,
+                entry_point: Some("main"),
+                // todo: pass in constants?
+                compilation_options: PipelineCompilationOptions::default(),
+                cache: None,
+            });
+
+        ComputePipelineBuilder {
+            gpu: self,
+            pipeline,
+            entries: Vec::new(),
+        }
     }
 }
