@@ -27,7 +27,7 @@ impl<T: ShaderType + WriteInto + CreateFrom> StorageBuffer<T> {
     pub fn download(&self, gpu: &mut Gpu) -> Result<T> {
         let staging = gpu.device.create_buffer(&BufferDescriptor {
             label: None,
-            size: mem::size_of::<T>() as u64,
+            size: self.buffer.size(),
             usage: BufferUsages::COPY_DST | BufferUsages::MAP_READ,
             mapped_at_creation: false,
         });

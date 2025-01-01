@@ -6,8 +6,9 @@ use encase::{
     ShaderType,
 };
 use wgpu::{
+    util::{BufferInitDescriptor, DeviceExt},
     BufferDescriptor, BufferUsages, CommandEncoder, CommandEncoderDescriptor,
-    ComputePipelineDescriptor, Device, DeviceDescriptor, Instance, InstanceDescriptor,
+    ComputePipelineDescriptor, Device, DeviceDescriptor, Instance, InstanceDescriptor, Limits,
     PipelineCompilationOptions, PowerPreference, Queue, RequestAdapterOptions,
     ShaderModuleDescriptor, ShaderSource,
 };
@@ -20,6 +21,7 @@ pub struct Gpu {
 }
 
 impl Gpu {
+    // todo: nicer way to change limits
     pub fn init() -> Result<Self> {
         let instance = Instance::new(InstanceDescriptor::default());
         let adapter = pollster::block_on(instance.request_adapter(&RequestAdapterOptions {
@@ -28,33 +30,39 @@ impl Gpu {
         }))
         .context("Error requesting adapter")?;
 
-        let (device, queue) =
-            pollster::block_on(adapter.request_device(&DeviceDescriptor::default(), None))?;
+        let mut required_limits = Limits::default();
+        required_limits.max_buffer_size = 256 << 21;
+        required_limits.max_storage_buffer_binding_size = 256 << 21;
+
+        let (device, queue) = pollster::block_on(adapter.request_device(
+            &DeviceDescriptor {
+                required_limits,
+                ..Default::default()
+            },
+            None,
+        ))?;
 
         Ok(Self { device, queue })
     }
 
-    pub fn create_buffer<T>(&self) -> StorageBuffer<T> {
-        let buffer = self.device.create_buffer(&BufferDescriptor {
-            label: None,
-            size: mem::size_of::<T>() as u64,
-            usage: BufferUsages::COPY_DST | BufferUsages::COPY_SRC | BufferUsages::STORAGE,
-            mapped_at_creation: false,
-        });
-
-        StorageBuffer {
-            buffer,
-            _type: PhantomData,
-        }
-    }
-
-    pub fn create_buffer_init<T>(&mut self, data: T) -> Result<StorageBuffer<T>>
+    pub fn create_buffer<T>(&mut self, data: T) -> Result<StorageBuffer<T>>
     where
         T: ShaderType + WriteInto + CreateFrom,
     {
-        let buffer = self.create_buffer::<T>();
-        buffer.upload(self, data)?;
-        Ok(buffer)
+        let mut buffer = Vec::new();
+        let mut storage = encase::StorageBuffer::new(&mut buffer);
+        storage.write(&data)?;
+
+        let buffer = self.device.create_buffer_init(&BufferInitDescriptor {
+            label: None,
+            usage: BufferUsages::COPY_DST | BufferUsages::COPY_SRC | BufferUsages::STORAGE,
+            contents: &buffer,
+        });
+
+        Ok(StorageBuffer {
+            buffer,
+            _type: PhantomData,
+        })
     }
 
     pub fn compute_pipeline(&mut self, source: ShaderSource) -> ComputePipelineBuilder {
