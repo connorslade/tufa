@@ -2,7 +2,7 @@ use anyhow::Result;
 
 use compute::{
     export::{encase::ShaderType, nalgebra::Vector3, wgpu::ShaderSource},
-    Gpu,
+    gpu::Gpu,
 };
 
 #[derive(ShaderType)]

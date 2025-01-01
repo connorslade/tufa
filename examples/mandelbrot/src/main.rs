@@ -1,8 +1,8 @@
 use anyhow::Result;
 
 use compute::{
-    export::{encase::ShaderType, nalgebra::Vector3, wgpu::{hal::auxil::db, ShaderSource}},
-    Gpu,
+    export::{encase::ShaderType, nalgebra::Vector3, wgpu::ShaderSource},
+    gpu::Gpu,
 };
 use image::Rgb;
 
