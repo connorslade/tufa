@@ -1,7 +1,7 @@
 use nalgebra::Vector3;
 use wgpu::{BindGroup, BindGroupDescriptor, BindGroupEntry, ComputePassDescriptor};
 
-use crate::{buffer::Buffer, gpu::Gpu};
+use crate::{buffer::StorageBuffer, gpu::Gpu};
 
 pub struct ComputePipelineBuilder<'a> {
     pub(crate) gpu: &'a mut Gpu,
@@ -11,7 +11,7 @@ pub struct ComputePipelineBuilder<'a> {
 }
 
 impl<'a> ComputePipelineBuilder<'a> {
-    pub fn bind_buffer<T>(mut self, entry: &'a Buffer<T>) -> Self {
+    pub fn bind_buffer<T>(mut self, entry: &'a StorageBuffer<T>) -> Self {
         self.entries.push(BindGroupEntry {
             binding: self.entries.len() as u32,
             resource: entry.buffer.as_entire_binding(),

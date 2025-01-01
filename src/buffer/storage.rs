@@ -3,21 +3,21 @@ use std::{marker::PhantomData, mem};
 use anyhow::Result;
 use encase::{
     internal::{CreateFrom, WriteInto},
-    ShaderType, StorageBuffer,
+    ShaderType,
 };
-use wgpu::{BufferDescriptor, BufferUsages, MaintainBase, MapMode};
+use wgpu::{Buffer, BufferDescriptor, BufferUsages, MaintainBase, MapMode};
 
 use crate::gpu::Gpu;
 
-pub struct Buffer<T> {
-    pub(crate) buffer: wgpu::Buffer,
+pub struct StorageBuffer<T> {
+    pub(crate) buffer: Buffer,
     pub(crate) _type: PhantomData<T>,
 }
 
-impl<T: ShaderType + WriteInto + CreateFrom> Buffer<T> {
+impl<T: ShaderType + WriteInto + CreateFrom> StorageBuffer<T> {
     pub fn upload(&self, gpu: &mut Gpu, data: T) -> Result<()> {
         let mut buffer = Vec::new();
-        let mut storage = StorageBuffer::new(&mut buffer);
+        let mut storage = encase::StorageBuffer::new(&mut buffer);
         storage.write(&data)?;
 
         gpu.queue.write_buffer(&self.buffer, 0, &buffer);

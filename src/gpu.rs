@@ -12,7 +12,7 @@ use wgpu::{
     ShaderModuleDescriptor, ShaderSource,
 };
 
-use crate::{buffer::Buffer, pipeline::compute::ComputePipelineBuilder};
+use crate::{buffer::StorageBuffer, pipeline::compute::ComputePipelineBuilder};
 
 pub struct Gpu {
     pub(crate) device: Device,
@@ -34,7 +34,7 @@ impl Gpu {
         Ok(Self { device, queue })
     }
 
-    pub fn create_buffer<T>(&self) -> Buffer<T> {
+    pub fn create_buffer<T>(&self) -> StorageBuffer<T> {
         let buffer = self.device.create_buffer(&BufferDescriptor {
             label: None,
             size: mem::size_of::<T>() as u64,
@@ -42,13 +42,13 @@ impl Gpu {
             mapped_at_creation: false,
         });
 
-        Buffer {
+        StorageBuffer {
             buffer,
             _type: PhantomData,
         }
     }
 
-    pub fn create_buffer_init<T>(&mut self, data: T) -> Result<Buffer<T>>
+    pub fn create_buffer_init<T>(&mut self, data: T) -> Result<StorageBuffer<T>>
     where
         T: ShaderType + WriteInto + CreateFrom,
     {
