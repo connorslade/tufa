@@ -15,29 +15,30 @@ use crate::gpu::Gpu;
 use super::Bindable;
 
 pub struct StorageBuffer<T> {
+    pub(crate) gpu: Gpu,
     pub(crate) buffer: Buffer,
     pub(crate) _type: PhantomData<T>,
 }
 
 impl<T: ShaderType + WriteInto + CreateFrom> StorageBuffer<T> {
-    pub fn upload(&self, gpu: &mut Gpu, data: T) -> Result<()> {
+    pub fn upload(&self, data: T) -> Result<()> {
         let mut buffer = Vec::new();
         let mut storage = encase::StorageBuffer::new(&mut buffer);
         storage.write(&data)?;
 
-        gpu.queue.write_buffer(&self.buffer, 0, &buffer);
+        self.gpu.queue.write_buffer(&self.buffer, 0, &buffer);
         Ok(())
     }
 
-    pub fn download(&self, gpu: &Gpu) -> Result<T> {
-        let staging = gpu.device.create_buffer(&BufferDescriptor {
+    pub fn download(&self) -> Result<T> {
+        let staging = self.gpu.device.create_buffer(&BufferDescriptor {
             label: None,
             size: self.buffer.size(),
             usage: BufferUsages::COPY_DST | BufferUsages::MAP_READ,
             mapped_at_creation: false,
         });
 
-        gpu.dispatch(|encoder| {
+        self.gpu.dispatch(|encoder| {
             encoder.copy_buffer_to_buffer(&self.buffer, 0, &staging, 0, self.buffer.size());
         });
 
@@ -46,7 +47,7 @@ impl<T: ShaderType + WriteInto + CreateFrom> StorageBuffer<T> {
         let (tx, rx) = crossbeam_channel::bounded(1);
         slice.map_async(MapMode::Read, move |_| tx.send(()).unwrap());
 
-        gpu.device.poll(MaintainBase::Wait);
+        self.gpu.device.poll(MaintainBase::Wait);
         rx.recv().unwrap();
 
         let data = slice.get_mapped_range().to_vec();
@@ -57,7 +58,7 @@ impl<T: ShaderType + WriteInto + CreateFrom> StorageBuffer<T> {
 }
 
 impl Gpu {
-    pub fn create_storage<T>(&mut self, data: T) -> Result<StorageBuffer<T>>
+    pub fn create_storage<T>(&self, data: T) -> Result<StorageBuffer<T>>
     where
         T: ShaderType + WriteInto + CreateFrom,
     {
@@ -72,6 +73,7 @@ impl Gpu {
         });
 
         Ok(StorageBuffer {
+            gpu: self.clone(),
             buffer,
             _type: PhantomData,
         })

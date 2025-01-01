@@ -15,23 +15,24 @@ use crate::gpu::Gpu;
 use super::Bindable;
 
 pub struct UniformBuffer<T> {
+    pub(crate) gpu: Gpu,
     pub(crate) buffer: Buffer,
     pub(crate) _type: PhantomData<T>,
 }
 
 impl<T: ShaderType + WriteInto + CreateFrom> UniformBuffer<T> {
-    pub fn upload(&self, gpu: &Gpu, data: T) -> Result<()> {
+    pub fn upload(&self, data: T) -> Result<()> {
         let mut buffer = Vec::new();
         let mut storage = encase::StorageBuffer::new(&mut buffer);
         storage.write(&data)?;
 
-        gpu.queue.write_buffer(&self.buffer, 0, &buffer);
+        self.gpu.queue.write_buffer(&self.buffer, 0, &buffer);
         Ok(())
     }
 }
 
 impl Gpu {
-    pub fn create_uniform<T>(&mut self, data: T) -> Result<UniformBuffer<T>>
+    pub fn create_uniform<T>(&self, data: T) -> Result<UniformBuffer<T>>
     where
         T: ShaderType + WriteInto + CreateFrom,
     {
@@ -46,6 +47,7 @@ impl Gpu {
         });
 
         Ok(UniformBuffer {
+            gpu: self.clone(),
             buffer,
             _type: PhantomData,
         })

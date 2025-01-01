@@ -1,7 +1,7 @@
 use anyhow::Result;
 
 use compute::{
-    export::{encase::ShaderType, nalgebra::Vector3, wgpu::ShaderSource},
+    export::{encase::ShaderType, nalgebra::Vector3, wgpu::include_wgsl},
     gpu::Gpu,
 };
 
@@ -12,18 +12,18 @@ struct Data {
 }
 
 fn main() -> Result<()> {
-    let mut gpu = Gpu::init()?;
+    let gpu = Gpu::init()?;
 
     let buffer = gpu.create_storage(Data { a: 10.0, b: 20.0 })?;
 
     let pipeline = gpu
-        .compute_pipeline(ShaderSource::Wgsl(include_str!("shader.wgsl").into()))
+        .compute_pipeline(include_wgsl!("shader.wgsl"))
         .bind_buffer(&buffer)
         .finish();
 
-    pipeline.dispatch(&mut gpu, Vector3::new(1, 1, 1));
+    pipeline.dispatch(Vector3::new(1, 1, 1));
 
-    let result = buffer.download(&mut gpu)?;
+    let result = buffer.download()?;
     println!("Result: {}", result.a);
 
     Ok(())

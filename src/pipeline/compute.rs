@@ -1,13 +1,13 @@
 use nalgebra::Vector3;
 use wgpu::{
     BindGroup, BindGroupDescriptor, BindGroupEntry, ComputePassDescriptor,
-    ComputePipelineDescriptor, PipelineCompilationOptions, ShaderModuleDescriptor, ShaderSource,
+    ComputePipelineDescriptor, PipelineCompilationOptions, ShaderModuleDescriptor,
 };
 
 use crate::{buffer::Bindable, gpu::Gpu};
 
 pub struct ComputePipelineBuilder<'a> {
-    pub(crate) gpu: &'a mut Gpu,
+    pub(crate) gpu: Gpu,
 
     pub(crate) pipeline: wgpu::ComputePipeline,
     pub(crate) entries: Vec<BindGroupEntry<'a>>,
@@ -30,6 +30,7 @@ impl<'a> ComputePipelineBuilder<'a> {
         });
 
         ComputePipeline {
+            gpu: self.gpu,
             pipeline: self.pipeline,
             bind_group,
         }
@@ -37,13 +38,15 @@ impl<'a> ComputePipelineBuilder<'a> {
 }
 
 pub struct ComputePipeline {
+    gpu: Gpu,
+
     pipeline: wgpu::ComputePipeline,
     bind_group: BindGroup,
 }
 
 impl ComputePipeline {
-    pub fn dispatch(&self, gpu: &Gpu, workgroups: Vector3<u32>) {
-        gpu.dispatch(|encoder| {
+    pub fn dispatch(&self, workgroups: Vector3<u32>) {
+        self.gpu.dispatch(|encoder| {
             let mut compute_pass = encoder.begin_compute_pass(&ComputePassDescriptor::default());
             compute_pass.set_pipeline(&self.pipeline);
             compute_pass.set_bind_group(0, Some(&self.bind_group), &[]);
@@ -53,11 +56,8 @@ impl ComputePipeline {
 }
 
 impl Gpu {
-    pub fn compute_pipeline(&mut self, source: ShaderSource) -> ComputePipelineBuilder {
-        let module = self.device.create_shader_module(ShaderModuleDescriptor {
-            label: None,
-            source,
-        });
+    pub fn compute_pipeline(&self, source: ShaderModuleDescriptor) -> ComputePipelineBuilder {
+        let module = self.device.create_shader_module(source);
 
         let pipeline = self
             .device
@@ -72,7 +72,7 @@ impl Gpu {
             });
 
         ComputePipelineBuilder {
-            gpu: self,
+            gpu: self.clone(),
             pipeline,
             entries: Vec::new(),
         }
