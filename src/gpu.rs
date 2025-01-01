@@ -46,14 +46,17 @@ impl Gpu {
         })
     }
 
+    /// Returns information on the selected adapter
     pub fn info(&self) -> &AdapterInfo {
         &self.info
     }
 
+    /// Processes any resource cleanups and mapping callbacks
     pub fn poll(&self) {
         self.device.poll(MaintainBase::Poll);
     }
 
+    /// Waits for all resource cleanups and mapping callbacks to complete
     pub fn wait(&self) {
         while !self.device.poll(MaintainBase::Wait).is_queue_empty() {}
     }

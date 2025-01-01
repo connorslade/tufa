@@ -10,10 +10,11 @@ use wgpu::{
     BindingResource, Buffer, BufferDescriptor, BufferUsages, MaintainBase, MapMode,
 };
 
-use crate::{gpu::Gpu, misc::ThreadSafePtr};
+use crate::{gpu::Gpu, misc::thread_ptr::ThreadSafePtr};
 
 use super::Bindable;
 
+/// A storage buffer is a buffer that can be read from or written to in the shader
 pub struct StorageBuffer<T> {
     pub(crate) gpu: Gpu,
     pub(crate) buffer: Buffer,
@@ -21,6 +22,7 @@ pub struct StorageBuffer<T> {
 }
 
 impl<T: ShaderType + WriteInto + CreateFrom> StorageBuffer<T> {
+    /// Uploads data into the buffer
     pub fn upload(&self, data: T) -> Result<()> {
         let mut buffer = Vec::new();
         let mut storage = encase::StorageBuffer::new(&mut buffer);
@@ -30,6 +32,8 @@ impl<T: ShaderType + WriteInto + CreateFrom> StorageBuffer<T> {
         Ok(())
     }
 
+    /// Downloads the buffer from the GPU in a blocking manner. This can be
+    /// pretty slow.
     pub fn download(&self) -> Result<T> {
         let staging = self.gpu.device.create_buffer(&BufferDescriptor {
             label: None,
@@ -56,6 +60,8 @@ impl<T: ShaderType + WriteInto + CreateFrom> StorageBuffer<T> {
         Ok(store.create()?)
     }
 
+    /// Requests the download of the buffer. The provided callback will be
+    /// executed once the transfer finishes.
     pub fn download_async(&self, func: impl FnOnce(T) + Send + 'static) {
         let staging = self.gpu.device.create_buffer(&BufferDescriptor {
             label: None,
@@ -85,6 +91,7 @@ impl<T: ShaderType + WriteInto + CreateFrom> StorageBuffer<T> {
 }
 
 impl Gpu {
+    /// Creates a new storage buffer with the givin initial state
     pub fn create_storage<T>(&self, data: T) -> Result<StorageBuffer<T>>
     where
         T: ShaderType + WriteInto + CreateFrom,

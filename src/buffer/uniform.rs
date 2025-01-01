@@ -3,7 +3,7 @@ use std::marker::PhantomData;
 use anyhow::Result;
 use encase::{
     internal::{CreateFrom, WriteInto},
-    ShaderType,
+    ShaderType, StorageBuffer,
 };
 use wgpu::{
     util::{BufferInitDescriptor, DeviceExt},
@@ -14,6 +14,7 @@ use crate::gpu::Gpu;
 
 use super::Bindable;
 
+/// A uniform buffer is for passing small amounts of read-only data
 pub struct UniformBuffer<T> {
     pub(crate) gpu: Gpu,
     pub(crate) buffer: Buffer,
@@ -21,9 +22,10 @@ pub struct UniformBuffer<T> {
 }
 
 impl<T: ShaderType + WriteInto + CreateFrom> UniformBuffer<T> {
+    /// Uploads data into the buffer
     pub fn upload(&self, data: T) -> Result<()> {
         let mut buffer = Vec::new();
-        let mut storage = encase::StorageBuffer::new(&mut buffer);
+        let mut storage = StorageBuffer::new(&mut buffer);
         storage.write(&data)?;
 
         self.gpu.queue.write_buffer(&self.buffer, 0, &buffer);
@@ -32,12 +34,13 @@ impl<T: ShaderType + WriteInto + CreateFrom> UniformBuffer<T> {
 }
 
 impl Gpu {
+    /// Creates a new uniform buffer with the givin initial state
     pub fn create_uniform<T>(&self, data: T) -> Result<UniformBuffer<T>>
     where
         T: ShaderType + WriteInto + CreateFrom,
     {
         let mut buffer = Vec::new();
-        let mut storage = encase::StorageBuffer::new(&mut buffer);
+        let mut storage = StorageBuffer::new(&mut buffer);
         storage.write(&data)?;
 
         let buffer = self.device.create_buffer_init(&BufferInitDescriptor {

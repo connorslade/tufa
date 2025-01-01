@@ -14,6 +14,7 @@ pub struct ComputePipelineBuilder<'a> {
 }
 
 impl<'a> ComputePipelineBuilder<'a> {
+    /// Adds the supplied buffer as the next entry in the bind group, starting with binding zero and counting up.
     pub fn bind_buffer(mut self, entry: &'a impl Bindable) -> Self {
         self.entries.push(BindGroupEntry {
             binding: self.entries.len() as u32,
@@ -22,6 +23,7 @@ impl<'a> ComputePipelineBuilder<'a> {
         self
     }
 
+    /// Converts the pipeline builder into an actual compte pipeline
     pub fn finish(self) -> ComputePipeline {
         let bind_group = self.gpu.device.create_bind_group(&BindGroupDescriptor {
             label: None,
@@ -45,6 +47,7 @@ pub struct ComputePipeline {
 }
 
 impl ComputePipeline {
+    /// Dispatches the pipeline on the specified number of workgroups
     pub fn dispatch(&self, workgroups: Vector3<u32>) {
         self.gpu.dispatch(|encoder| {
             let mut compute_pass = encoder.begin_compute_pass(&ComputePassDescriptor::default());
@@ -56,6 +59,8 @@ impl ComputePipeline {
 }
 
 impl Gpu {
+    /// Creates a new compute pipeline builder with the specified shader module.
+    /// The compute entrypoint must be a function named `main`.
     pub fn compute_pipeline(&self, source: ShaderModuleDescriptor) -> ComputePipelineBuilder {
         let module = self.device.create_shader_module(source);
 
