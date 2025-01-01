@@ -3,7 +3,7 @@ use std::{iter, ops::Deref, sync::Arc};
 use anyhow::{Context, Result};
 use wgpu::{
     AdapterInfo, CommandEncoder, CommandEncoderDescriptor, Device, DeviceDescriptor, Instance,
-    InstanceDescriptor, Limits, PowerPreference, Queue, RequestAdapterOptions,
+    InstanceDescriptor, Limits, MaintainBase, PowerPreference, Queue, RequestAdapterOptions,
 };
 
 #[derive(Clone)]
@@ -50,6 +50,14 @@ impl Gpu {
         &self.info
     }
 
+    pub fn poll(&self) {
+        self.device.poll(MaintainBase::Poll);
+    }
+
+    pub fn wait(&self) {
+        while !self.device.poll(MaintainBase::Wait).is_queue_empty() {}
+    }
+
     pub(crate) fn dispatch(&self, proc: impl FnOnce(&mut CommandEncoder)) {
         let mut encoder = self
             .device
@@ -64,5 +72,11 @@ impl Deref for Gpu {
 
     fn deref(&self) -> &Self::Target {
         &self.inner
+    }
+}
+
+impl Drop for Gpu {
+    fn drop(&mut self) {
+        self.wait();
     }
 }

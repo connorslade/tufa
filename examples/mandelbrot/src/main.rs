@@ -40,14 +40,14 @@ fn main() -> Result<()> {
         })?;
 
         pipeline.dispatch(Vector3::new(SIZE.x / 8, SIZE.y / 8, 1));
-
-        let result = buffer.download()?;
-        let img = ImageBuffer::from_par_fn(SIZE.x, SIZE.y, |x, y| {
-            let color = result[(y * SIZE.x + x) as usize];
-            Rgb([color as u8, (color >> 8) as u8, (color >> 16) as u8])
+        buffer.download_async(move |result| {
+            ImageBuffer::from_par_fn(SIZE.x, SIZE.y, |x, y| {
+                let color = result[(y * SIZE.x + x) as usize];
+                Rgb([color as u8, (color >> 8) as u8, (color >> 16) as u8])
+            })
+            .save(format!("rec/out-{zoom:0>4}.png"))
+            .unwrap();
         });
-
-        img.save(format!("rec/out-{zoom:0>4}.png"))?;
     }
 
     Ok(())

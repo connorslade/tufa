@@ -1,16 +1,16 @@
-use std::marker::PhantomData;
+use std::{marker::PhantomData, thread};
 
 use anyhow::Result;
 use encase::{
     internal::{CreateFrom, WriteInto},
-    ShaderType,
+    DynamicStorageBuffer, ShaderType,
 };
 use wgpu::{
     util::{BufferInitDescriptor, DeviceExt},
     BindingResource, Buffer, BufferDescriptor, BufferUsages, MaintainBase, MapMode,
 };
 
-use crate::gpu::Gpu;
+use crate::{gpu::Gpu, misc::ThreadSafePtr};
 
 use super::Bindable;
 
@@ -54,6 +54,33 @@ impl<T: ShaderType + WriteInto + CreateFrom> StorageBuffer<T> {
         let mut store = encase::DynamicStorageBuffer::new(data);
 
         Ok(store.create()?)
+    }
+
+    pub fn download_async(&self, func: impl FnOnce(T) + Send + 'static) {
+        let staging = self.gpu.device.create_buffer(&BufferDescriptor {
+            label: None,
+            size: self.buffer.size(),
+            usage: BufferUsages::COPY_DST | BufferUsages::MAP_READ,
+            mapped_at_creation: false,
+        });
+        let staging = Box::leak(Box::new(staging));
+
+        self.gpu.dispatch(|encoder| {
+            encoder.copy_buffer_to_buffer(&self.buffer, 0, staging, 0, self.buffer.size());
+        });
+
+        let staging = ThreadSafePtr(staging as *mut Buffer);
+        let slice = staging.deref().slice(..);
+
+        slice.map_async(MapMode::Read, move |_| {
+            let data = slice.get_mapped_range().to_vec();
+            unsafe { drop(Box::from_raw(staging.deref_mut())) };
+
+            thread::spawn(move || {
+                let mut store = DynamicStorageBuffer::new(data);
+                func(store.create().unwrap());
+            });
+        });
     }
 }
 

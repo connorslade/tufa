@@ -1,5 +1,6 @@
 pub mod buffer;
 pub mod gpu;
+mod misc;
 pub mod pipeline;
 
 pub mod export {
