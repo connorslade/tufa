@@ -1,9 +1,7 @@
 use std::sync::Arc;
 
 use anyhow::Result;
-use egui::FontDefinitions;
-use egui_wgpu_backend::ScreenDescriptor;
-use egui_winit_platform::{Platform, PlatformDescriptor};
+use egui_wgpu::ScreenDescriptor;
 use wgpu::{
     Color, CompositeAlphaMode, LoadOp, Operations, PresentMode, RenderPass,
     RenderPassColorAttachment, RenderPassDescriptor, StoreOp, Surface, SurfaceConfiguration,
@@ -17,6 +15,8 @@ use winit::{
 };
 
 use crate::{gpu::Gpu, TEXTURE_FORMAT};
+
+use super::egui::Egui;
 
 pub struct Window<'a> {
     app: Application<'a>,
@@ -33,9 +33,7 @@ struct Application<'a> {
 struct InnerApplication<'a> {
     window: Arc<winit::window::Window>,
     surface: Surface<'a>,
-
-    egui_platform: Platform,
-    egui_render: egui_wgpu_backend::RenderPass,
+    egui: Egui,
 }
 
 impl<'a> Window<'a> {
@@ -52,21 +50,12 @@ impl<'a> ApplicationHandler for Application<'a> {
         let window = Arc::new(event_loop.create_window(self.attributes.clone()).unwrap());
         let surface = self.gpu.instance.create_surface(window.clone()).unwrap();
 
-        let size = window.inner_size();
-        let egui_platform = egui_winit_platform::Platform::new(PlatformDescriptor {
-            physical_width: size.width,
-            physical_height: size.height,
-            scale_factor: window.scale_factor(),
-            font_definitions: FontDefinitions::default(),
-            style: Default::default(),
-        });
-        let egui_render = egui_wgpu_backend::RenderPass::new(&self.gpu.device, TEXTURE_FORMAT, 1);
+        let egui = Egui::new(&self.gpu.device, TEXTURE_FORMAT, None, 1, &window);
 
         self.state = Some(InnerApplication {
             window,
             surface,
-            egui_platform,
-            egui_render,
+            egui,
         });
     }
 
@@ -81,7 +70,7 @@ impl<'a> ApplicationHandler for Application<'a> {
             return;
         }
 
-        state.egui_platform.handle_event(&event);
+        state.egui.handle_input(&state.window, &event);
         match event {
             WindowEvent::CloseRequested => event_loop.exit(),
             WindowEvent::Resized(_size) => self.resize_surface(),
@@ -111,47 +100,27 @@ impl<'a> ApplicationHandler for Application<'a> {
                     (self.render)(&mut render_pass);
                     drop(render_pass);
 
-                    state.egui_platform.begin_pass();
-                    let ctx = state.egui_platform.context();
-                    egui::Window::new("Ello").show(&ctx, |ui| {
-                        ui.label("it works!?");
+                    state.egui.begin_frame(&state.window);
+
+                    egui::Window::new("Window").show(state.egui.context(), |ui| {
+                        ui.label("it works!!");
                     });
 
-                    let egui_output = state.egui_platform.end_pass(Some(&state.window));
-                    let egui_paint = ctx.tessellate(egui_output.shapes, ctx.pixels_per_point());
-
                     let size = state.window.inner_size();
-                    let screen_descriptor = ScreenDescriptor {
-                        physical_width: size.width,
-                        physical_height: size.height,
-                        scale_factor: state.window.scale_factor() as f32,
-                    };
-
-                    state
-                        .egui_render
-                        .add_textures(
-                            &self.gpu.device,
-                            &self.gpu.queue,
-                            &egui_output.textures_delta,
-                        )
-                        .unwrap();
-                    state.egui_render.update_buffers(
+                    state.egui.end_frame_and_draw(
                         &self.gpu.device,
                         &self.gpu.queue,
-                        &egui_paint,
-                        &screen_descriptor,
+                        encoder,
+                        &state.window,
+                        &view,
+                        ScreenDescriptor {
+                            size_in_pixels: [size.width, size.height],
+                            pixels_per_point: state.window.scale_factor() as f32,
+                        },
                     );
-
-                    state
-                        .egui_render
-                        .execute(encoder, &view, &egui_paint, &screen_descriptor, None)
-                        .unwrap();
                 });
 
                 output.present();
-                //  egui_rpass
-                //     .remove_textures(tdelta)
-                //     .expect("remove texture ok");
                 state.window.request_redraw();
             }
             _ => {}

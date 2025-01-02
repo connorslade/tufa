@@ -14,8 +14,8 @@ wgpu = "23.0.1"
 
 # Interactive only
 egui = "0.30.0"
-egui_wgpu_backend = "0.33.0"
-egui_winit_platform = "0.25.0"
+egui-wgpu = "0.30.0"
+egui-winit = "0.30.0"
 winit = "0.30.7"
 
 [workspace]
