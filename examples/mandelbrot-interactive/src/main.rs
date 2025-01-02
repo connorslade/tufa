@@ -10,14 +10,15 @@ use compute::{
         winit::{dpi::LogicalSize, window::WindowAttributes},
     },
     gpu::Gpu,
-    interactive::Interactive,
+    interactive::{GraphicsCtx, Interactive},
     pipeline::render::RenderPipeline,
 };
 
 #[derive(ShaderType, Default)]
 struct Uniform {
-    size: Vector2<u32>,
+    window: Vector2<u32>,
     center: Vector2<f32>,
+    iters: u32,
     zoom: f32,
 }
 
@@ -29,26 +30,37 @@ struct App {
 }
 
 impl Interactive for App {
-    fn render(&mut self, _gpu: &Gpu, render_pass: &mut RenderPass) {
+    fn render(&mut self, gcx: GraphicsCtx, render_pass: &mut RenderPass) {
+        let window = gcx.window.inner_size();
+        self.ctx.window = Vector2::new(window.width, window.height);
+
         self.uniform.upload(&self.ctx).unwrap();
         self.render.draw_screen_quad(render_pass);
     }
 
-    fn ui(&mut self, ctx: &Context) {
+    fn ui(&mut self, gcx: GraphicsCtx, ctx: &Context) {
+        let dragging_viewport = ctx.dragged_id().is_none();
         ctx.input(|input| {
             self.ctx.zoom += input.smooth_scroll_delta.y / 100.0;
 
-            if input.pointer.any_down() && input.modifiers.shift {
+            if input.pointer.any_down() && dragging_viewport {
+                let window = gcx.window.inner_size();
                 let zoom = 4.0 / self.ctx.zoom.exp();
-                let delta = input.pointer.delta() * zoom / 100.0;
-                self.ctx.center += Vector2::new(-delta.x, delta.y);
+                let delta = input.pointer.delta() * zoom;
+                self.ctx.center +=
+                    Vector2::new(-delta.x, delta.y) / window.width.min(window.height) as f32;
             }
         });
 
         egui::Window::new("Mandelbrot").show(ctx, |ui| {
             ui.horizontal(|ui| {
+                ui.add(Slider::new(&mut self.ctx.zoom, 0.0..=12.0));
                 ui.label("Zoom");
-                ui.add(Slider::new(&mut self.ctx.zoom, 0.0..=12.0))
+            });
+
+            ui.horizontal(|ui| {
+                ui.add(Slider::new(&mut self.ctx.iters, 0..=1000).step_by(1.0));
+                ui.label("Iters");
             });
 
             ui.horizontal(|ui| {
@@ -56,6 +68,7 @@ impl Interactive for App {
                 ui.label("+");
                 ui.add(DragValue::new(&mut self.ctx.center.y).speed(0.01));
                 ui.label("i");
+                ui.label("Const");
             })
         });
     }
@@ -78,7 +91,10 @@ fn main() -> Result<()> {
             uniform,
             render,
 
-            ctx: Uniform::default(),
+            ctx: Uniform {
+                iters: 1000,
+                ..Uniform::default()
+            },
         },
     )
     .run()?;

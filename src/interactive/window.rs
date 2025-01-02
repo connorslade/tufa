@@ -16,7 +16,7 @@ use winit::{
 
 use crate::{gpu::Gpu, TEXTURE_FORMAT};
 
-use super::{egui::Egui, Interactive};
+use super::{egui::Egui, GraphicsCtx, Interactive};
 
 pub struct Window<'a, T> {
     app: Application<'a, T>,
@@ -51,7 +51,11 @@ impl<T: Interactive> ApplicationHandler for Application<'_, T> {
         let surface = self.gpu.instance.create_surface(window.clone()).unwrap();
         let egui = Egui::new(&self.gpu.device, TEXTURE_FORMAT, None, 1, &window);
 
-        self.interactive.init(&self.gpu, &window);
+        let gcx = GraphicsCtx {
+            gpu: &self.gpu,
+            window: &window,
+        };
+        self.interactive.init(gcx);
 
         self.state = Some(InnerApplication {
             window,
@@ -77,6 +81,10 @@ impl<T: Interactive> ApplicationHandler for Application<'_, T> {
             WindowEvent::Resized(_size) => self.resize_surface(),
             WindowEvent::RedrawRequested => {
                 let output = state.surface.get_current_texture().unwrap();
+                let gcx = GraphicsCtx {
+                    gpu: &self.gpu,
+                    window: &state.window,
+                };
 
                 self.gpu.dispatch(|encoder| {
                     let view = output
@@ -98,12 +106,12 @@ impl<T: Interactive> ApplicationHandler for Application<'_, T> {
                             timestamp_writes: None,
                             occlusion_query_set: None,
                         });
-                        self.interactive.render(&self.gpu, &mut render_pass);
+                        self.interactive.render(gcx.clone(), &mut render_pass);
                     }
 
                     {
                         state.egui.begin_frame(&state.window);
-                        self.interactive.ui(state.egui.context());
+                        self.interactive.ui(gcx, state.egui.context());
 
                         let size = state.window.inner_size();
                         state.egui.end_frame_and_draw(
