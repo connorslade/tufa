@@ -34,7 +34,7 @@ fn main() -> Result<()> {
         .finish();
 
     for zoom in 0..10_0 {
-        uniform.upload(Uniform {
+        uniform.upload(&Uniform {
             size: SIZE,
             zoom: zoom as f32 / 10.0,
         })?;
