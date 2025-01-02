@@ -16,18 +16,18 @@ use winit::{
 
 use crate::{gpu::Gpu, TEXTURE_FORMAT};
 
-use super::egui::Egui;
+use super::{egui::Egui, Interactive};
 
-pub struct Window<'a> {
-    app: Application<'a>,
+pub struct Window<'a, T> {
+    app: Application<'a, T>,
 }
 
-struct Application<'a> {
+struct Application<'a, T> {
     gpu: Gpu,
     attributes: WindowAttributes,
-    render: Box<dyn Fn(&mut RenderPass)>,
-
     state: Option<InnerApplication<'a>>,
+
+    interactive: T,
 }
 
 struct InnerApplication<'a> {
@@ -36,7 +36,7 @@ struct InnerApplication<'a> {
     egui: Egui,
 }
 
-impl<'a> Window<'a> {
+impl<'a, T: Interactive> Window<'a, T> {
     pub fn run(mut self) -> Result<()> {
         let event_loop_builder = EventLoopBuilder::default().build()?;
         event_loop_builder.set_control_flow(ControlFlow::Wait);
@@ -45,12 +45,13 @@ impl<'a> Window<'a> {
     }
 }
 
-impl<'a> ApplicationHandler for Application<'a> {
+impl<'a, T: Interactive> ApplicationHandler for Application<'a, T> {
     fn resumed(&mut self, event_loop: &ActiveEventLoop) {
         let window = Arc::new(event_loop.create_window(self.attributes.clone()).unwrap());
         let surface = self.gpu.instance.create_surface(window.clone()).unwrap();
-
         let egui = Egui::new(&self.gpu.device, TEXTURE_FORMAT, None, 1, &window);
+
+        self.interactive.init(&self.gpu, &window);
 
         self.state = Some(InnerApplication {
             window,
@@ -82,42 +83,41 @@ impl<'a> ApplicationHandler for Application<'a> {
                         .texture
                         .create_view(&TextureViewDescriptor::default());
 
-                    let mut render_pass = encoder.begin_render_pass(&RenderPassDescriptor {
-                        label: None,
-                        color_attachments: &[Some(RenderPassColorAttachment {
-                            view: &view,
-                            resolve_target: None,
-                            ops: Operations {
-                                load: LoadOp::Clear(Color::BLACK),
-                                store: StoreOp::Store,
+                    {
+                        let mut render_pass = encoder.begin_render_pass(&RenderPassDescriptor {
+                            label: None,
+                            color_attachments: &[Some(RenderPassColorAttachment {
+                                view: &view,
+                                resolve_target: None,
+                                ops: Operations {
+                                    load: LoadOp::Clear(Color::BLACK),
+                                    store: StoreOp::Store,
+                                },
+                            })],
+                            depth_stencil_attachment: None,
+                            timestamp_writes: None,
+                            occlusion_query_set: None,
+                        });
+                        self.interactive.render(&self.gpu, &mut render_pass);
+                    }
+
+                    {
+                        state.egui.begin_frame(&state.window);
+                        self.interactive.ui(state.egui.context());
+
+                        let size = state.window.inner_size();
+                        state.egui.end_frame_and_draw(
+                            &self.gpu.device,
+                            &self.gpu.queue,
+                            encoder,
+                            &state.window,
+                            &view,
+                            ScreenDescriptor {
+                                size_in_pixels: [size.width, size.height],
+                                pixels_per_point: state.window.scale_factor() as f32,
                             },
-                        })],
-                        depth_stencil_attachment: None,
-                        timestamp_writes: None,
-                        occlusion_query_set: None,
-                    });
-
-                    (self.render)(&mut render_pass);
-                    drop(render_pass);
-
-                    state.egui.begin_frame(&state.window);
-
-                    egui::Window::new("Window").show(state.egui.context(), |ui| {
-                        ui.label("it works!!");
-                    });
-
-                    let size = state.window.inner_size();
-                    state.egui.end_frame_and_draw(
-                        &self.gpu.device,
-                        &self.gpu.queue,
-                        encoder,
-                        &state.window,
-                        &view,
-                        ScreenDescriptor {
-                            size_in_pixels: [size.width, size.height],
-                            pixels_per_point: state.window.scale_factor() as f32,
-                        },
-                    );
+                        );
+                    }
                 });
 
                 output.present();
@@ -128,7 +128,7 @@ impl<'a> ApplicationHandler for Application<'a> {
     }
 }
 
-impl<'a> Application<'a> {
+impl<'a, T> Application<'a, T> {
     fn resize_surface(&mut self) {
         let state = self.state.as_mut().unwrap();
         let size = state.window.inner_size();
@@ -149,18 +149,14 @@ impl<'a> Application<'a> {
 }
 
 impl Gpu {
-    pub fn create_window(
-        &self,
-        attributes: WindowAttributes,
-        render: impl Fn(&mut RenderPass) + 'static,
-    ) -> Window {
+    pub fn create_window<T>(&self, attributes: WindowAttributes, interactive: T) -> Window<T> {
         Window {
             app: Application {
                 gpu: self.clone(),
                 attributes,
-                render: Box::new(render),
-
                 state: None,
+
+                interactive,
             },
         }
     }

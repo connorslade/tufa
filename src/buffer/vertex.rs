@@ -1,10 +1,7 @@
 use std::marker::PhantomData;
 
 use anyhow::Result;
-use encase::{
-    internal::{CreateFrom, WriteInto},
-    DynamicStorageBuffer, ShaderSize, ShaderType, StorageBuffer,
-};
+use encase::{internal::WriteInto, DynamicStorageBuffer, ShaderSize, ShaderType, StorageBuffer};
 use wgpu::{
     util::{BufferInitDescriptor, DeviceExt},
     BindingResource, BindingType, Buffer, BufferUsages,

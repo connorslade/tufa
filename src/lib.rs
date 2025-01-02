@@ -7,7 +7,7 @@ mod misc;
 pub mod pipeline;
 
 pub mod export {
-    pub use {encase, nalgebra, wgpu, winit};
+    pub use {egui, encase, nalgebra, wgpu, winit};
 }
 
 const TEXTURE_FORMAT: TextureFormat = TextureFormat::Bgra8Unorm;

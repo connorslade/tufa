@@ -1,14 +1,20 @@
 use anyhow::Result;
 
 use compute::{
+    buffer::{IndexBuffer, StorageBuffer, UniformBuffer, VertexBuffer},
     export::{
+        egui::{self, Context, Slider},
         encase::ShaderType,
         nalgebra::{Vector2, Vector3},
-        wgpu::{include_wgsl, ShaderStages},
+        wgpu::{include_wgsl, RenderPass, ShaderStages},
         winit::window::WindowAttributes,
     },
     gpu::Gpu,
-    pipeline::render::{QUAD_INDEX, QUAD_VERTEX},
+    interactive::Interactive,
+    pipeline::{
+        compute::ComputePipeline,
+        render::{RenderPipeline, Vertex, QUAD_INDEX, QUAD_VERTEX},
+    },
 };
 
 #[derive(ShaderType)]
@@ -28,46 +34,73 @@ fn main() -> Result<()> {
     })?;
     let buffer = gpu.create_storage(vec![0; (SIZE.x * SIZE.y) as usize])?;
 
-    let pipeline = gpu
+    let compute = gpu
         .compute_pipeline(include_wgsl!("shader.wgsl"))
         .bind_buffer(&uniform)
         .bind_buffer(&buffer)
         .finish();
-    pipeline.dispatch(Vector3::new(SIZE.x / 8, SIZE.y / 8, 1));
+    compute.dispatch(Vector3::new(SIZE.x / 8, SIZE.y / 8, 1));
 
     let render = gpu
         .render_pipeline(include_wgsl!("render.wgsl"))
         .bind_buffer(&uniform, ShaderStages::FRAGMENT)
         .bind_buffer(&buffer, ShaderStages::FRAGMENT)
         .finish();
-    let index = gpu.create_index(QUAD_INDEX)?;
     let vertex = gpu.create_vertex(QUAD_VERTEX)?;
+    let index = gpu.create_index(QUAD_INDEX)?;
 
-    let window = gpu.create_window(
+    gpu.create_window(
         WindowAttributes::default().with_title("Mandelbrot"),
-        move |render_pass| {
-            render.dispatch(render_pass, &index, &vertex, 0..6);
+        App {
+            compute,
+            uniform,
+            buffer,
+
+            render,
+            vertex,
+            index,
+
+            zoom: 0.0,
         },
-    );
-
-    window.run()?;
-
-    // for zoom in 0..10_0 {
-    //     uniform.upload(Uniform {
-    //         size: SIZE,
-    //         zoom: zoom as f32 / 10.0,
-    //     })?;
-
-    //     pipeline.dispatch(Vector3::new(SIZE.x / 8, SIZE.y / 8, 1));
-    //     buffer.download_async(move |result| {
-    //         ImageBuffer::from_par_fn(SIZE.x, SIZE.y, |x, y| {
-    //             let color = result[(y * SIZE.x + x) as usize];
-    //             Rgb([color as u8, (color >> 8) as u8, (color >> 16) as u8])
-    //         })
-    //         .save(format!("rec/out-{zoom:0>4}.png"))
-    //         .unwrap();
-    //     });
-    // }
+    )
+    .run()?;
 
     Ok(())
+}
+
+struct App {
+    compute: ComputePipeline,
+    uniform: UniformBuffer<Uniform>,
+    buffer: StorageBuffer<Vec<u32>>,
+
+    render: RenderPipeline,
+    vertex: VertexBuffer<Vertex>,
+    index: IndexBuffer,
+
+    zoom: f32,
+}
+
+impl Interactive for App {
+    fn render(&mut self, _gpu: &Gpu, render_pass: &mut RenderPass) {
+        self.uniform
+            .upload(Uniform {
+                size: SIZE,
+                zoom: self.zoom,
+            })
+            .unwrap();
+        self.compute
+            .dispatch(Vector3::new(SIZE.x / 8, SIZE.y / 8, 1));
+
+        self.render
+            .dispatch(render_pass, &self.index, &self.vertex, 0..6);
+    }
+
+    fn ui(&mut self, ctx: &Context) {
+        egui::Window::new("Mandelbrot").show(ctx, |ui| {
+            ui.horizontal(|ui| {
+                ui.label("Zoom");
+                ui.add(Slider::new(&mut self.zoom, 0.0..=12.0))
+            });
+        });
+    }
 }
