@@ -12,6 +12,7 @@ pub struct Gpu {
 }
 
 pub struct GpuInner {
+    pub(crate) instance: Instance,
     pub(crate) device: Device,
     pub(crate) queue: Queue,
 
@@ -39,6 +40,7 @@ impl Gpu {
 
         Ok(Self {
             inner: Arc::new(GpuInner {
+                instance,
                 device,
                 queue,
                 info,

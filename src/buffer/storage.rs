@@ -7,7 +7,7 @@ use encase::{
 };
 use wgpu::{
     util::{BufferInitDescriptor, DeviceExt},
-    BindingResource, Buffer, BufferDescriptor, BufferUsages, MaintainBase, MapMode,
+    BindingResource, BindingType, Buffer, BufferDescriptor, BufferUsages, MaintainBase, MapMode,
 };
 
 use crate::{gpu::Gpu, misc::thread_ptr::ThreadSafePtr};
@@ -16,9 +16,9 @@ use super::Bindable;
 
 /// A storage buffer is a buffer that can be read from or written to in the shader
 pub struct StorageBuffer<T> {
-    pub(crate) gpu: Gpu,
-    pub(crate) buffer: Buffer,
-    pub(crate) _type: PhantomData<T>,
+    gpu: Gpu,
+    buffer: Buffer,
+    _type: PhantomData<T>,
 }
 
 impl<T: ShaderType + WriteInto + CreateFrom> StorageBuffer<T> {
@@ -117,5 +117,13 @@ impl Gpu {
 impl<T> Bindable for StorageBuffer<T> {
     fn as_entire_binding(&self) -> BindingResource<'_> {
         self.buffer.as_entire_binding()
+    }
+
+    fn binding_type(&self) -> BindingType {
+        BindingType::Buffer {
+            ty: wgpu::BufferBindingType::Storage { read_only: false },
+            has_dynamic_offset: false,
+            min_binding_size: None,
+        }
     }
 }

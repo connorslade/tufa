@@ -3,7 +3,7 @@ use std::marker::PhantomData;
 use anyhow::Result;
 use encase::{
     internal::{CreateFrom, WriteInto},
-    ShaderType, StorageBuffer,
+    DynamicStorageBuffer, ShaderSize, ShaderType, StorageBuffer,
 };
 use wgpu::{
     util::{BufferInitDescriptor, DeviceExt},
@@ -14,16 +14,17 @@ use crate::gpu::Gpu;
 
 use super::Bindable;
 
-/// A uniform buffer is for passing small amounts of read-only data
-pub struct UniformBuffer<T> {
+pub struct VertexBuffer<T> {
     gpu: Gpu,
-    buffer: Buffer,
+    pub(crate) buffer: Buffer,
     _type: PhantomData<T>,
 }
 
-impl<T: ShaderType + WriteInto + CreateFrom> UniformBuffer<T> {
-    /// Uploads data into the buffer
-    pub fn upload(&self, data: T) -> Result<()> {
+impl<T> VertexBuffer<T> {
+    pub fn upload(&self, data: &[T]) -> Result<()>
+    where
+        T: ShaderType + ShaderSize + WriteInto,
+    {
         let mut buffer = Vec::new();
         let mut storage = StorageBuffer::new(&mut buffer);
         storage.write(&data)?;
@@ -34,22 +35,21 @@ impl<T: ShaderType + WriteInto + CreateFrom> UniformBuffer<T> {
 }
 
 impl Gpu {
-    /// Creates a new uniform buffer with the givin initial state
-    pub fn create_uniform<T>(&self, data: T) -> Result<UniformBuffer<T>>
+    pub fn create_vertex<T>(&self, data: &[T]) -> Result<VertexBuffer<T>>
     where
-        T: ShaderType + WriteInto + CreateFrom,
+        T: ShaderType + ShaderSize + WriteInto,
     {
         let mut buffer = Vec::new();
-        let mut storage = StorageBuffer::new(&mut buffer);
-        storage.write(&data)?;
+        let mut storage = DynamicStorageBuffer::new(&mut buffer);
+        storage.write(data)?;
 
         let buffer = self.device.create_buffer_init(&BufferInitDescriptor {
             label: None,
-            usage: BufferUsages::COPY_DST | BufferUsages::UNIFORM,
+            usage: BufferUsages::COPY_DST | BufferUsages::VERTEX,
             contents: &buffer,
         });
 
-        Ok(UniformBuffer {
+        Ok(VertexBuffer {
             gpu: self.clone(),
             buffer,
             _type: PhantomData,
@@ -57,14 +57,14 @@ impl Gpu {
     }
 }
 
-impl<T> Bindable for UniformBuffer<T> {
+impl<T> Bindable for VertexBuffer<T> {
     fn as_entire_binding(&self) -> BindingResource<'_> {
         self.buffer.as_entire_binding()
     }
 
     fn binding_type(&self) -> BindingType {
         BindingType::Buffer {
-            ty: wgpu::BufferBindingType::Uniform,
+            ty: wgpu::BufferBindingType::Storage { read_only: false },
             has_dynamic_offset: false,
             min_binding_size: None,
         }
