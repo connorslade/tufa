@@ -23,7 +23,7 @@ pub struct StorageBuffer<T> {
 
 impl<T: ShaderType + WriteInto + CreateFrom> StorageBuffer<T> {
     /// Uploads data into the buffer
-    pub fn upload(&self, data: T) -> Result<()> {
+    pub fn upload(&self, data: &T) -> Result<()> {
         let mut buffer = Vec::new();
         let mut storage = encase::StorageBuffer::new(&mut buffer);
         storage.write(&data)?;
