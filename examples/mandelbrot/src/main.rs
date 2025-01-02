@@ -40,10 +40,10 @@ fn main() -> Result<()> {
         .finish();
     let index = gpu.create_index(&[0, 1, 2, 2, 3, 0])?;
     let vertex = gpu.create_vertex(&[
-        Vertex::new(Vector4::new(-1.0, -1.0, 1.0, 1.0), Vector2::new(0.0, 1.0)),
-        Vertex::new(Vector4::new(1.0, -1.0, 1.0, 1.0), Vector2::new(0.0, 0.0)),
-        Vertex::new(Vector4::new(1.0, 1.0, 1.0, 1.0), Vector2::new(1.0, 0.0)),
-        Vertex::new(Vector4::new(-1.0, 1.0, 1.0, 1.0), Vector2::new(1.0, 1.0)),
+        Vertex::new(Vector4::new(-1.0, -1.0, 1.0, 1.0), Vector2::new(0.0, 0.0)),
+        Vertex::new(Vector4::new(1.0, -1.0, 1.0, 1.0), Vector2::new(1.0, 0.0)),
+        Vertex::new(Vector4::new(1.0, 1.0, 1.0, 1.0), Vector2::new(1.0, 1.0)),
+        Vertex::new(Vector4::new(-1.0, 1.0, 1.0, 1.0), Vector2::new(0.0, 1.0)),
     ])?;
 
     let window = gpu.create_window(

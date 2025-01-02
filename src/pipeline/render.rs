@@ -1,10 +1,10 @@
-use std::{mem, ops::Range};
+use std::ops::Range;
 
 use encase::ShaderType;
 use nalgebra::{Vector2, Vector4};
 use wgpu::{
     BindGroup, BindGroupDescriptor, BindGroupEntry, BindGroupLayoutDescriptor,
-    BindGroupLayoutEntry, BufferAddress, ColorTargetState, ColorWrites, FragmentState,
+    BindGroupLayoutEntry, ColorTargetState, ColorWrites, FragmentState, IndexFormat,
     MultisampleState, PipelineCompilationOptions, PipelineLayoutDescriptor, PrimitiveState,
     RenderPass, ShaderModule, ShaderModuleDescriptor, ShaderStages, VertexAttribute,
     VertexBufferLayout, VertexFormat, VertexState, VertexStepMode,
@@ -17,7 +17,7 @@ use crate::{
 };
 
 pub const VERTEX_BUFFER_LAYOUT: VertexBufferLayout = VertexBufferLayout {
-    array_stride: mem::size_of::<Vertex>() as BufferAddress,
+    array_stride: 32, // NOTE: WGSL alignment rules factor into this
     step_mode: VertexStepMode::Vertex,
     attributes: &[
         VertexAttribute {
@@ -26,7 +26,7 @@ pub const VERTEX_BUFFER_LAYOUT: VertexBufferLayout = VertexBufferLayout {
             shader_location: 0,
         },
         VertexAttribute {
-            format: VertexFormat::Float32x3,
+            format: VertexFormat::Float32x2,
             offset: 4 * 4,
             shader_location: 1,
         },
@@ -70,9 +70,9 @@ impl RenderPipeline {
     ) {
         render_pass.set_pipeline(&self.pipeline);
         render_pass.set_bind_group(0, Some(&self.bind_group), &[]);
-        render_pass.set_index_buffer(index.buffer.slice(..), wgpu::IndexFormat::Uint32);
+        render_pass.set_index_buffer(index.buffer.slice(..), IndexFormat::Uint32);
         render_pass.set_vertex_buffer(0, vertex.buffer.slice(..));
-        render_pass.draw_indexed(indices, 0, 0..0);
+        render_pass.draw_indexed(indices, 0, 0..1);
     }
 }
 
