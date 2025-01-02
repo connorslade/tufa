@@ -1,4 +1,4 @@
-use std::ops::{Index, Range};
+use std::ops::Range;
 
 use encase::ShaderType;
 use nalgebra::{Vector2, Vector4};

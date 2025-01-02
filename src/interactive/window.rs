@@ -3,9 +3,9 @@ use std::sync::Arc;
 use anyhow::Result;
 use egui_wgpu::ScreenDescriptor;
 use wgpu::{
-    Color, CompositeAlphaMode, LoadOp, Operations, PresentMode, RenderPass,
-    RenderPassColorAttachment, RenderPassDescriptor, StoreOp, Surface, SurfaceConfiguration,
-    TextureUsages, TextureViewDescriptor,
+    Color, CompositeAlphaMode, LoadOp, Operations, PresentMode, RenderPassColorAttachment,
+    RenderPassDescriptor, StoreOp, Surface, SurfaceConfiguration, TextureUsages,
+    TextureViewDescriptor,
 };
 use winit::{
     application::ApplicationHandler,
@@ -36,7 +36,7 @@ struct InnerApplication<'a> {
     egui: Egui,
 }
 
-impl<'a, T: Interactive> Window<'a, T> {
+impl<T: Interactive> Window<'_, T> {
     pub fn run(mut self) -> Result<()> {
         let event_loop_builder = EventLoopBuilder::default().build()?;
         event_loop_builder.set_control_flow(ControlFlow::Wait);
@@ -45,7 +45,7 @@ impl<'a, T: Interactive> Window<'a, T> {
     }
 }
 
-impl<'a, T: Interactive> ApplicationHandler for Application<'a, T> {
+impl<T: Interactive> ApplicationHandler for Application<'_, T> {
     fn resumed(&mut self, event_loop: &ActiveEventLoop) {
         let window = Arc::new(event_loop.create_window(self.attributes.clone()).unwrap());
         let surface = self.gpu.instance.create_surface(window.clone()).unwrap();
@@ -128,7 +128,7 @@ impl<'a, T: Interactive> ApplicationHandler for Application<'a, T> {
     }
 }
 
-impl<'a, T> Application<'a, T> {
+impl<T> Application<'_, T> {
     fn resize_surface(&mut self) {
         let state = self.state.as_mut().unwrap();
         let size = state.window.inner_size();

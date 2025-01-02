@@ -16,7 +16,7 @@ pub struct IndexBuffer {
 impl IndexBuffer {
     pub fn upload(&self, data: &[u32]) -> Result<()> {
         let buffer = bytemuck::cast_slice(data);
-        self.gpu.queue.write_buffer(&self.buffer, 0, &buffer);
+        self.gpu.queue.write_buffer(&self.buffer, 0, buffer);
         Ok(())
     }
 }
