@@ -12,6 +12,7 @@ pub struct Gpu {
 }
 
 pub struct GpuInner {
+    #[cfg(feature = "interactive")]
     pub(crate) instance: Instance,
     pub(crate) device: Device,
     pub(crate) queue: Queue,
@@ -40,6 +41,7 @@ impl Gpu {
 
         Ok(Self {
             inner: Arc::new(GpuInner {
+                #[cfg(feature = "interactive")]
                 instance,
                 device,
                 queue,

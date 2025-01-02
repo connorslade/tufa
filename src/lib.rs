@@ -2,12 +2,15 @@ use wgpu::TextureFormat;
 
 pub mod buffer;
 pub mod gpu;
+#[cfg(feature = "interactive")]
 pub mod interactive;
 mod misc;
 pub mod pipeline;
 
 pub mod export {
-    pub use {egui, encase, nalgebra, wgpu, winit};
+    #[cfg(feature = "interactive")]
+    pub use {egui, winit};
+    pub use {encase, nalgebra, wgpu};
 }
 
 const TEXTURE_FORMAT: TextureFormat = TextureFormat::Bgra8Unorm;
