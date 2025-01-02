@@ -17,9 +17,11 @@ use compute::{
 #[derive(ShaderType, Default)]
 struct Uniform {
     window: Vector2<u32>,
-    center: Vector2<f32>,
     iters: u32,
+
+    center: Vector2<f32>,
     zoom: f32,
+    power: u32,
 }
 
 struct App {
@@ -52,25 +54,35 @@ impl Interactive for App {
             }
         });
 
-        egui::Window::new("Mandelbrot").show(ctx, |ui| {
-            ui.horizontal(|ui| {
-                ui.add(Slider::new(&mut self.ctx.zoom, 0.0..=12.0));
-                ui.label("Zoom");
-            });
+        egui::Window::new("Mandelbrot")
+            .default_width(0.0)
+            .resizable(false)
+            .show(ctx, |ui| {
+                ui.horizontal(|ui| {
+                    ui.add(Slider::new(&mut self.ctx.zoom, 0.0..=12.0));
+                    ui.label("Zoom");
+                });
 
-            ui.horizontal(|ui| {
-                ui.add(Slider::new(&mut self.ctx.iters, 0..=1000).step_by(1.0));
-                ui.label("Iters");
-            });
+                ui.horizontal(|ui| {
+                    ui.add(Slider::new(&mut self.ctx.iters, 0..=1000).step_by(1.0));
+                    ui.label("Iters");
+                });
 
-            ui.horizontal(|ui| {
-                ui.add(DragValue::new(&mut self.ctx.center.x).speed(0.01));
-                ui.label("+");
-                ui.add(DragValue::new(&mut self.ctx.center.y).speed(0.01));
-                ui.label("i");
-                ui.label("Const");
-            })
-        });
+                ui.separator();
+
+                ui.horizontal(|ui| {
+                    ui.add(Slider::new(&mut self.ctx.power, 2..=8).step_by(2.0));
+                    ui.label("Power");
+                });
+
+                ui.horizontal(|ui| {
+                    ui.add(DragValue::new(&mut self.ctx.center.x).speed(0.01));
+                    ui.label("+");
+                    ui.add(DragValue::new(&mut self.ctx.center.y).speed(0.01));
+                    ui.label("i");
+                    ui.label("Const");
+                });
+            });
     }
 }
 
@@ -93,6 +105,7 @@ fn main() -> Result<()> {
 
             ctx: Uniform {
                 iters: 1000,
+                power: 2,
                 ..Uniform::default()
             },
         },
