@@ -1,4 +1,4 @@
-use std::ops::Range;
+use std::ops::{Index, Range};
 
 use encase::ShaderType;
 use nalgebra::{Vector2, Vector4};
@@ -55,9 +55,11 @@ impl Vertex {
 
 pub struct RenderPipeline {
     gpu: Gpu,
-
     pipeline: wgpu::RenderPipeline,
     bind_group: BindGroup,
+
+    // todo: store in Gpu and reuse across pipelines?
+    buffers: Option<(VertexBuffer<Vertex>, IndexBuffer)>,
 }
 
 pub struct RenderPipelineBuilder<'a> {
@@ -69,7 +71,7 @@ pub struct RenderPipelineBuilder<'a> {
 }
 
 impl RenderPipeline {
-    pub fn dispatch(
+    pub fn draw_indexed(
         &self,
         render_pass: &mut RenderPass,
         index: &IndexBuffer,
@@ -81,6 +83,21 @@ impl RenderPipeline {
         render_pass.set_index_buffer(index.buffer.slice(..), IndexFormat::Uint32);
         render_pass.set_vertex_buffer(0, vertex.buffer.slice(..));
         render_pass.draw_indexed(indices, 0, 0..1);
+    }
+
+    pub fn draw_screen_quad(&mut self, render_pass: &mut RenderPass) {
+        let (vertex, index) = self.buffers.get_or_insert_with(|| {
+            (
+                self.gpu.create_vertex(QUAD_VERTEX).unwrap(),
+                self.gpu.create_index(QUAD_INDEX).unwrap(),
+            )
+        });
+
+        render_pass.set_pipeline(&self.pipeline);
+        render_pass.set_bind_group(0, Some(&self.bind_group), &[]);
+        render_pass.set_index_buffer(index.buffer.slice(..), IndexFormat::Uint32);
+        render_pass.set_vertex_buffer(0, vertex.buffer.slice(..));
+        render_pass.draw_indexed(0..6, 0, 0..1);
     }
 }
 
@@ -152,6 +169,8 @@ impl<'a> RenderPipelineBuilder<'a> {
             gpu: self.gpu,
             pipeline,
             bind_group,
+
+            buffers: None,
         }
     }
 }

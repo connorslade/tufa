@@ -149,7 +149,11 @@ impl<'a, T> Application<'a, T> {
 }
 
 impl Gpu {
-    pub fn create_window<T>(&self, attributes: WindowAttributes, interactive: T) -> Window<T> {
+    pub fn create_window<T: Interactive>(
+        &self,
+        attributes: WindowAttributes,
+        interactive: T,
+    ) -> Window<T> {
         Window {
             app: Application {
                 gpu: self.clone(),
