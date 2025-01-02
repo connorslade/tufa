@@ -3,12 +3,12 @@ use anyhow::Result;
 use compute::{
     export::{
         encase::ShaderType,
-        nalgebra::{Vector2, Vector4},
+        nalgebra::{Vector2, Vector3},
         wgpu::{include_wgsl, ShaderStages},
         winit::window::WindowAttributes,
     },
     gpu::Gpu,
-    pipeline::render::Vertex,
+    pipeline::render::{QUAD_INDEX, QUAD_VERTEX},
 };
 
 #[derive(ShaderType)]
@@ -33,18 +33,15 @@ fn main() -> Result<()> {
         .bind_buffer(&uniform)
         .bind_buffer(&buffer)
         .finish();
+    pipeline.dispatch(Vector3::new(SIZE.x / 8, SIZE.y / 8, 1));
 
     let render = gpu
         .render_pipeline(include_wgsl!("render.wgsl"))
+        .bind_buffer(&uniform, ShaderStages::FRAGMENT)
         .bind_buffer(&buffer, ShaderStages::FRAGMENT)
         .finish();
-    let index = gpu.create_index(&[0, 1, 2, 2, 3, 0])?;
-    let vertex = gpu.create_vertex(&[
-        Vertex::new(Vector4::new(-1.0, -1.0, 1.0, 1.0), Vector2::new(0.0, 0.0)),
-        Vertex::new(Vector4::new(1.0, -1.0, 1.0, 1.0), Vector2::new(1.0, 0.0)),
-        Vertex::new(Vector4::new(1.0, 1.0, 1.0, 1.0), Vector2::new(1.0, 1.0)),
-        Vertex::new(Vector4::new(-1.0, 1.0, 1.0, 1.0), Vector2::new(0.0, 1.0)),
-    ])?;
+    let index = gpu.create_index(QUAD_INDEX)?;
+    let vertex = gpu.create_vertex(QUAD_VERTEX)?;
 
     let window = gpu.create_window(
         WindowAttributes::default().with_title("Mandelbrot"),

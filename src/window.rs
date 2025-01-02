@@ -90,7 +90,7 @@ impl<'a> ApplicationHandler for Application<'a> {
                 });
 
                 output.present();
-                state.window.request_redraw();
+                // state.window.request_redraw();
             }
             _ => {}
         }

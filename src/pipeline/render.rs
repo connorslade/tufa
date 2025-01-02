@@ -33,6 +33,14 @@ pub const VERTEX_BUFFER_LAYOUT: VertexBufferLayout = VertexBufferLayout {
     ],
 };
 
+pub const QUAD_INDEX: &[u32] = &[0, 1, 2, 2, 3, 0];
+pub const QUAD_VERTEX: &[Vertex] = &[
+    Vertex::new(Vector4::new(-1.0, -1.0, 1.0, 1.0), Vector2::new(0.0, 0.0)),
+    Vertex::new(Vector4::new(1.0, -1.0, 1.0, 1.0), Vector2::new(1.0, 0.0)),
+    Vertex::new(Vector4::new(1.0, 1.0, 1.0, 1.0), Vector2::new(1.0, 1.0)),
+    Vertex::new(Vector4::new(-1.0, 1.0, 1.0, 1.0), Vector2::new(0.0, 1.0)),
+];
+
 #[derive(ShaderType)]
 pub struct Vertex {
     pub position: Vector4<f32>,
