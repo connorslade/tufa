@@ -2,9 +2,9 @@ use wgpu::TextureFormat;
 
 pub mod buffer;
 pub mod gpu;
+pub mod interactive;
 mod misc;
 pub mod pipeline;
-pub mod window;
 
 pub mod export {
     pub use {encase, nalgebra, wgpu, winit};
