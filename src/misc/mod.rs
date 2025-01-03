@@ -1,2 +1,2 @@
 pub mod mutability;
-pub mod thread_ptr;
+pub(crate) mod thread_ptr;

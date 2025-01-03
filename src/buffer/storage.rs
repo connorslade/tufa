@@ -29,7 +29,7 @@ pub struct StorageBuffer<T, Mut: Mutability> {
     _mut: PhantomData<Mut>,
 }
 
-impl<T: ShaderType + WriteInto + CreateFrom> StorageBuffer<T, Mutable> {
+impl<T: ShaderType + WriteInto + CreateFrom, Mut: Mutability> StorageBuffer<T, Mut> {
     /// Uploads data into the buffer
     pub fn upload(&mut self, data: &T) -> Result<()> {
         let mut buffer = Vec::new();
@@ -47,9 +47,7 @@ impl<T: ShaderType + WriteInto + CreateFrom> StorageBuffer<T, Mutable> {
         }
         Ok(())
     }
-}
 
-impl<T: ShaderType + WriteInto + CreateFrom, Mut: Mutability> StorageBuffer<T, Mut> {
     /// Downloads the buffer from the GPU in a blocking manner. This can be
     /// pretty slow.
     pub fn download(&self) -> Result<T> {

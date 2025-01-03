@@ -4,7 +4,7 @@ pub mod buffer;
 pub mod gpu;
 #[cfg(feature = "interactive")]
 pub mod interactive;
-mod misc;
+pub mod misc;
 pub mod pipeline;
 
 pub mod export {
