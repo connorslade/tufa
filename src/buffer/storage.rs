@@ -31,12 +31,20 @@ pub struct StorageBuffer<T, Mut: Mutability> {
 
 impl<T: ShaderType + WriteInto + CreateFrom> StorageBuffer<T, Mutable> {
     /// Uploads data into the buffer
-    pub fn upload(&self, data: &T) -> Result<()> {
+    pub fn upload(&mut self, data: &T) -> Result<()> {
         let mut buffer = Vec::new();
         let mut storage = encase::StorageBuffer::new(&mut buffer);
         storage.write(&data)?;
 
-        self.gpu.queue.write_buffer(&self.buffer, 0, &buffer);
+        if buffer.len() > self.buffer.size() as usize {
+            self.buffer = self.gpu.device.create_buffer_init(&BufferInitDescriptor {
+                label: None,
+                contents: &buffer,
+                usage: BufferUsages::COPY_DST | BufferUsages::COPY_SRC | BufferUsages::STORAGE,
+            });
+        } else {
+            self.gpu.queue.write_buffer(&self.buffer, 0, &buffer);
+        }
         Ok(())
     }
 }
