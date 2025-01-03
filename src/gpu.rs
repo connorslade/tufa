@@ -1,9 +1,14 @@
-use std::{iter, ops::Deref, sync::Arc};
+use std::{collections::HashMap, iter, ops::Deref, sync::Arc};
 
 use anyhow::{Context, Result};
 use wgpu::{
     AdapterInfo, CommandEncoder, CommandEncoderDescriptor, Device, DeviceDescriptor, Instance,
     InstanceDescriptor, Limits, MaintainBase, PowerPreference, Queue, RequestAdapterOptions,
+};
+
+use crate::{
+    buffer::Bindable,
+    misc::ids::{BufferId, PipelineId},
 };
 
 #[derive(Clone)]
@@ -16,8 +21,10 @@ pub struct GpuInner {
     pub(crate) instance: Instance,
     pub(crate) device: Device,
     pub(crate) queue: Queue,
-
     pub(crate) info: AdapterInfo,
+
+    buffers: HashMap<BufferId, Box<dyn Bindable>>,
+    compute_pipelines: HashMap<PipelineId, (wgpu::ComputePipeline, Vec<BufferId>)>,
 }
 
 impl Gpu {
@@ -46,6 +53,9 @@ impl Gpu {
                 device,
                 queue,
                 info,
+
+                buffers: HashMap::new(),
+                compute_pipelines: HashMap::new(),
             }),
         })
     }

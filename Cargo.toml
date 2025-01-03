@@ -24,6 +24,7 @@ interactive = ["egui", "egui-wgpu", "egui-winit", "winit"]
 [workspace]
 members = [
     "examples/basic",
-    "examples/mandelbrot",
+    "examples/buffer-resize",
     "examples/mandelbrot-interactive",
+    "examples/mandelbrot",
 ]
