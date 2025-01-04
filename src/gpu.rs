@@ -8,7 +8,10 @@ use wgpu::{
     RequestAdapterOptions,
 };
 
-use crate::misc::ids::BufferId;
+use crate::{
+    buffer::BindableResource,
+    misc::ids::{BufferId, PipelineId},
+};
 
 #[derive(Clone)]
 pub struct Gpu {
@@ -22,6 +25,7 @@ pub struct GpuInner {
     pub(crate) queue: Queue,
     pub(crate) info: AdapterInfo,
 
+    pub(crate) pipelines: RwLock<HashMap<PipelineId, (Vec<BindableResource>, bool)>>,
     pub(crate) buffers: RwLock<HashMap<BufferId, Buffer>>,
 }
 
@@ -52,6 +56,7 @@ impl Gpu {
                 queue,
                 info,
 
+                pipelines: RwLock::new(HashMap::new()),
                 buffers: RwLock::new(HashMap::new()),
             }),
         })
@@ -78,6 +83,15 @@ impl Gpu {
             .create_command_encoder(&CommandEncoderDescriptor::default());
         proc(&mut encoder);
         self.queue.submit(iter::once(encoder.finish()));
+    }
+
+    pub(crate) fn mark_resource_dirty(&self, resource: &BindableResource) {
+        let mut pipelines = self.pipelines.write();
+        let pipeline = pipelines
+            .iter_mut()
+            .find(|(_, (resources, _))| resources.contains(resource))
+            .unwrap();
+        pipeline.1 .1 = true;
     }
 }
 

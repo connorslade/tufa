@@ -6,7 +6,7 @@ macro_rules! id_type {
         pub struct $name(u64);
 
         impl $name {
-            pub fn new() -> Self {
+            pub(crate) fn new() -> Self {
                 static ID: AtomicU64 = AtomicU64::new(0);
                 Self(ID.fetch_add(1, Ordering::Relaxed))
             }

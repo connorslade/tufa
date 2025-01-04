@@ -7,11 +7,13 @@ use wgpu::{
 use crate::{
     buffer::{Bindable, BindableResource},
     gpu::Gpu,
+    misc::ids::PipelineId,
 };
 
 pub struct ComputePipeline {
     gpu: Gpu,
 
+    id: PipelineId,
     pipeline: wgpu::ComputePipeline,
     entries: Vec<BindableResource>,
     bind_group: BindGroup,
@@ -27,8 +29,7 @@ pub struct ComputePipelineBuilder {
 impl ComputePipeline {
     /// Dispatches the pipeline on the specified number of workgroups
     pub fn dispatch(&mut self, workgroups: Vector3<u32>) {
-        let outdated_bind_group = true;
-        if outdated_bind_group {
+        if self.gpu.pipelines.read()[&self.id].1 {
             self.bind_group = create_bind_group(&self.gpu, &self.pipeline, &self.entries);
         }
 
@@ -50,7 +51,14 @@ impl ComputePipelineBuilder {
 
     /// Converts the pipeline builder into an actual compte pipeline
     pub fn finish(self) -> ComputePipeline {
+        let id = PipelineId::new();
+        self.gpu
+            .pipelines
+            .write()
+            .insert(id, (self.entries.clone(), false));
+
         ComputePipeline {
+            id,
             bind_group: create_bind_group(&self.gpu, &self.pipeline, &self.entries),
             gpu: self.gpu,
             pipeline: self.pipeline,
@@ -104,5 +112,11 @@ impl Gpu {
             pipeline,
             entries: Vec::new(),
         }
+    }
+}
+
+impl Drop for ComputePipeline {
+    fn drop(&mut self) {
+        self.gpu.pipelines.write().remove(&self.id);
     }
 }

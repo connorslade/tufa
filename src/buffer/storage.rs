@@ -51,6 +51,8 @@ impl<T: ShaderType + WriteInto + CreateFrom, Mut: Mutability> StorageBuffer<T, M
                 usage: BufferUsages::COPY_DST | BufferUsages::COPY_SRC | BufferUsages::STORAGE,
             });
             self.gpu.buffers.write().insert(self.buffer, replacement);
+            self.gpu
+                .mark_resource_dirty(&BindableResource::Buffer(self.buffer));
         } else {
             self.gpu.queue.write_buffer(&buffer, 0, &bytes);
         }

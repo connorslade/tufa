@@ -18,6 +18,7 @@ pub trait Bindable {
     fn binding_type(&self) -> BindingType;
 }
 
+#[derive(Clone, Copy, PartialEq, Eq)]
 pub enum BindableResource {
     Buffer(BufferId),
 }

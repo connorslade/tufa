@@ -13,6 +13,7 @@ use wgpu::{
 use crate::{
     buffer::{Bindable, BindableResource, IndexBuffer, VertexBuffer},
     gpu::Gpu,
+    misc::ids::PipelineId,
     TEXTURE_FORMAT,
 };
 
@@ -55,6 +56,8 @@ impl Vertex {
 
 pub struct RenderPipeline {
     gpu: Gpu,
+
+    id: PipelineId,
     pipeline: wgpu::RenderPipeline,
     entries: Vec<BindableResource>,
     bind_group: BindGroup,
@@ -73,8 +76,7 @@ pub struct RenderPipelineBuilder {
 
 impl RenderPipeline {
     fn recreate_bind_group(&mut self) {
-        let outdated_bind_group = true;
-        if outdated_bind_group {
+        if self.gpu.pipelines.read()[&self.id].1 {
             self.bind_group = create_bind_group(&self.gpu, &self.pipeline, &self.entries);
         }
     }
@@ -168,8 +170,15 @@ impl RenderPipelineBuilder {
         });
 
         let bind_group = create_bind_group(&self.gpu, &pipeline, &self.bind_group);
+        let id = PipelineId::new();
+        self.gpu
+            .pipelines
+            .write()
+            .insert(id, (self.bind_group.clone(), false));
+
         RenderPipeline {
             gpu: self.gpu,
+            id,
             pipeline,
             bind_group,
             entries: self.bind_group,
@@ -211,5 +220,11 @@ impl Gpu {
             bind_group_layout: Vec::new(),
             bind_group: Vec::new(),
         }
+    }
+}
+
+impl Drop for RenderPipeline {
+    fn drop(&mut self) {
+        self.gpu.pipelines.write().remove(&self.id);
     }
 }
