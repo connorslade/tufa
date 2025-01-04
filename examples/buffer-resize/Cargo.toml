@@ -1,0 +1,14 @@
+[package]
+name = "buffer-resize"
+version = "0.1.0"
+edition = "2021"
+
+[[bin]]
+name = "buffer-resize"
+path = "main.rs"
+
+[dependencies]
+compute = { path = "../.." }
+
+anyhow = "1.0.95"
+encase = "0.10.0"

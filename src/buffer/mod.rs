@@ -1,4 +1,4 @@
-use wgpu::{BindingResource, BindingType};
+use wgpu::BindingType;
 
 mod index;
 mod storage;
@@ -10,8 +10,15 @@ pub use storage::StorageBuffer;
 pub use uniform::UniformBuffer;
 pub use vertex::VertexBuffer;
 
+use crate::misc::ids::BufferId;
+
 /// A resource that can be bound to a shader
 pub trait Bindable {
-    fn as_entire_binding(&self) -> BindingResource<'_>;
+    fn resource(&self) -> BindableResource;
     fn binding_type(&self) -> BindingType;
+}
+
+#[derive(Clone, Copy, PartialEq, Eq)]
+pub enum BindableResource {
+    Buffer(BufferId),
 }

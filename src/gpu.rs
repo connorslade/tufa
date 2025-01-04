@@ -1,9 +1,16 @@
-use std::{iter, ops::Deref, sync::Arc};
+use std::{collections::HashMap, iter, ops::Deref, sync::Arc};
 
 use anyhow::{Context, Result};
+use parking_lot::RwLock;
 use wgpu::{
-    AdapterInfo, CommandEncoder, CommandEncoderDescriptor, Device, DeviceDescriptor, Instance,
-    InstanceDescriptor, Limits, MaintainBase, PowerPreference, Queue, RequestAdapterOptions,
+    AdapterInfo, Buffer, CommandEncoder, CommandEncoderDescriptor, Device, DeviceDescriptor,
+    Instance, InstanceDescriptor, Limits, MaintainBase, PowerPreference, Queue,
+    RequestAdapterOptions,
+};
+
+use crate::{
+    buffer::BindableResource,
+    misc::ids::{BufferId, PipelineId},
 };
 
 #[derive(Clone)]
@@ -16,8 +23,10 @@ pub struct GpuInner {
     pub(crate) instance: Instance,
     pub(crate) device: Device,
     pub(crate) queue: Queue,
-
     pub(crate) info: AdapterInfo,
+
+    pub(crate) pipelines: RwLock<HashMap<PipelineId, (Vec<BindableResource>, bool)>>,
+    pub(crate) buffers: RwLock<HashMap<BufferId, Buffer>>,
 }
 
 impl Gpu {
@@ -46,6 +55,9 @@ impl Gpu {
                 device,
                 queue,
                 info,
+
+                pipelines: RwLock::new(HashMap::new()),
+                buffers: RwLock::new(HashMap::new()),
             }),
         })
     }
@@ -71,6 +83,15 @@ impl Gpu {
             .create_command_encoder(&CommandEncoderDescriptor::default());
         proc(&mut encoder);
         self.queue.submit(iter::once(encoder.finish()));
+    }
+
+    pub(crate) fn mark_resource_dirty(&self, resource: &BindableResource) {
+        let mut pipelines = self.pipelines.write();
+        let pipeline = pipelines
+            .iter_mut()
+            .find(|(_, (resources, _))| resources.contains(resource))
+            .unwrap();
+        pipeline.1 .1 = true;
     }
 }
 
