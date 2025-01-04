@@ -2,7 +2,7 @@ use std::sync::atomic::{AtomicU64, Ordering};
 
 macro_rules! id_type {
     ($name:ident) => {
-        #[derive(PartialEq, Eq)]
+        #[derive(PartialEq, Eq, Hash, Copy, Clone)]
         pub struct $name(u64);
 
         impl $name {

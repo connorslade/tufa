@@ -11,7 +11,7 @@ use wgpu::{
 };
 
 use crate::{
-    buffer::{Bindable, IndexBuffer, VertexBuffer},
+    buffer::{Bindable, BindableResource, IndexBuffer, VertexBuffer},
     gpu::Gpu,
     TEXTURE_FORMAT,
 };
@@ -56,36 +56,47 @@ impl Vertex {
 pub struct RenderPipeline {
     gpu: Gpu,
     pipeline: wgpu::RenderPipeline,
+    entries: Vec<BindableResource>,
     bind_group: BindGroup,
 
     // todo: store in Gpu and reuse across pipelines?
     buffers: Option<(VertexBuffer<Vertex>, IndexBuffer)>,
 }
 
-pub struct RenderPipelineBuilder<'a> {
+pub struct RenderPipelineBuilder {
     gpu: Gpu,
 
     module: ShaderModule,
     bind_group_layout: Vec<BindGroupLayoutEntry>,
-    bind_group: Vec<BindGroupEntry<'a>>,
+    bind_group: Vec<BindableResource>,
 }
 
 impl RenderPipeline {
+    fn recreate_bind_group(&mut self) {
+        let outdated_bind_group = true;
+        if outdated_bind_group {
+            self.bind_group = create_bind_group(&self.gpu, &self.pipeline, &self.entries);
+        }
+    }
+
     pub fn draw_indexed(
-        &self,
+        &mut self,
         render_pass: &mut RenderPass,
         index: &IndexBuffer,
         vertex: &VertexBuffer<Vertex>,
         indices: Range<u32>,
     ) {
+        self.recreate_bind_group();
+
         render_pass.set_pipeline(&self.pipeline);
         render_pass.set_bind_group(0, Some(&self.bind_group), &[]);
-        render_pass.set_index_buffer(index.buffer.slice(..), IndexFormat::Uint32);
-        render_pass.set_vertex_buffer(0, vertex.buffer.slice(..));
+        render_pass.set_index_buffer(index.get().slice(..), IndexFormat::Uint32);
+        render_pass.set_vertex_buffer(0, vertex.get().slice(..));
         render_pass.draw_indexed(indices, 0, 0..1);
     }
 
     pub fn draw_screen_quad(&mut self, render_pass: &mut RenderPass) {
+        self.recreate_bind_group();
         let (vertex, index) = self.buffers.get_or_insert_with(|| {
             (
                 self.gpu.create_vertex(QUAD_VERTEX).unwrap(),
@@ -95,20 +106,17 @@ impl RenderPipeline {
 
         render_pass.set_pipeline(&self.pipeline);
         render_pass.set_bind_group(0, Some(&self.bind_group), &[]);
-        render_pass.set_index_buffer(index.buffer.slice(..), IndexFormat::Uint32);
-        render_pass.set_vertex_buffer(0, vertex.buffer.slice(..));
+        render_pass.set_index_buffer(index.get().slice(..), IndexFormat::Uint32);
+        render_pass.set_vertex_buffer(0, vertex.get().slice(..));
         render_pass.draw_indexed(0..6, 0, 0..1);
     }
 }
 
-impl<'a> RenderPipelineBuilder<'a> {
-    pub fn bind_buffer(mut self, entry: &'a impl Bindable, visibility: ShaderStages) -> Self {
+impl RenderPipelineBuilder {
+    pub fn bind_buffer(mut self, entry: &impl Bindable, visibility: ShaderStages) -> Self {
         let binding = self.bind_group.len() as u32;
 
-        self.bind_group.push(BindGroupEntry {
-            binding,
-            resource: entry.as_entire_binding(),
-        });
+        self.bind_group.push(entry.resource());
         self.bind_group_layout.push(BindGroupLayoutEntry {
             binding,
             visibility,
@@ -159,20 +167,38 @@ impl<'a> RenderPipelineBuilder<'a> {
             cache: None,
         });
 
-        let bind_group = device.create_bind_group(&BindGroupDescriptor {
-            label: None,
-            layout: &pipeline.get_bind_group_layout(0),
-            entries: &self.bind_group,
-        });
-
+        let bind_group = create_bind_group(&self.gpu, &pipeline, &self.bind_group);
         RenderPipeline {
             gpu: self.gpu,
             pipeline,
             bind_group,
+            entries: self.bind_group,
 
             buffers: None,
         }
     }
+}
+
+fn create_bind_group(
+    gpu: &Gpu,
+    pipeline: &wgpu::RenderPipeline,
+    entries: &[BindableResource],
+) -> BindGroup {
+    let buffers = gpu.buffers.read();
+    gpu.device.create_bind_group(&BindGroupDescriptor {
+        label: None,
+        layout: &pipeline.get_bind_group_layout(0),
+        entries: &entries
+            .iter()
+            .enumerate()
+            .map(|(binding, id)| BindGroupEntry {
+                binding: binding as u32,
+                resource: match id {
+                    BindableResource::Buffer(buffer) => buffers[buffer].as_entire_binding(),
+                },
+            })
+            .collect::<Vec<_>>(),
+    })
 }
 
 impl Gpu {

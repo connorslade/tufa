@@ -1,15 +1,14 @@
 use std::{collections::HashMap, iter, ops::Deref, sync::Arc};
 
 use anyhow::{Context, Result};
+use parking_lot::RwLock;
 use wgpu::{
-    AdapterInfo, CommandEncoder, CommandEncoderDescriptor, Device, DeviceDescriptor, Instance,
-    InstanceDescriptor, Limits, MaintainBase, PowerPreference, Queue, RequestAdapterOptions,
+    AdapterInfo, Buffer, CommandEncoder, CommandEncoderDescriptor, Device, DeviceDescriptor,
+    Instance, InstanceDescriptor, Limits, MaintainBase, PowerPreference, Queue,
+    RequestAdapterOptions,
 };
 
-use crate::{
-    buffer::Bindable,
-    misc::ids::{BufferId, PipelineId},
-};
+use crate::misc::ids::BufferId;
 
 #[derive(Clone)]
 pub struct Gpu {
@@ -23,8 +22,7 @@ pub struct GpuInner {
     pub(crate) queue: Queue,
     pub(crate) info: AdapterInfo,
 
-    buffers: HashMap<BufferId, Box<dyn Bindable>>,
-    compute_pipelines: HashMap<PipelineId, (wgpu::ComputePipeline, Vec<BufferId>)>,
+    pub(crate) buffers: RwLock<HashMap<BufferId, Buffer>>,
 }
 
 impl Gpu {
@@ -54,8 +52,7 @@ impl Gpu {
                 queue,
                 info,
 
-                buffers: HashMap::new(),
-                compute_pipelines: HashMap::new(),
+                buffers: RwLock::new(HashMap::new()),
             }),
         })
     }

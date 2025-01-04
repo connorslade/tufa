@@ -15,12 +15,12 @@ struct Data {
 fn main() -> Result<()> {
     let gpu = Gpu::init()?;
 
-    let mut buffer = gpu.create_storage(Data {
+    let buffer = gpu.create_storage(Data {
         out: 0.0,
         items: vec![1.0, 2.0],
     })?;
 
-    let pipeline = gpu
+    let mut pipeline = gpu
         .compute_pipeline(include_wgsl!("compute.wgsl"))
         .bind_buffer(&buffer)
         .finish();

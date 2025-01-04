@@ -27,7 +27,7 @@ fn main() -> Result<()> {
     })?;
     let buffer = gpu.create_storage(vec![0; (SIZE.x * SIZE.y) as usize])?;
 
-    let pipeline = gpu
+    let mut pipeline = gpu
         .compute_pipeline(include_wgsl!("shader.wgsl"))
         .bind_buffer(&uniform)
         .bind_buffer(&buffer)

@@ -2,22 +2,27 @@ use std::marker::PhantomData;
 
 use anyhow::Result;
 use encase::{internal::WriteInto, DynamicStorageBuffer, ShaderSize, ShaderType, StorageBuffer};
+use parking_lot::{MappedRwLockReadGuard, RwLockReadGuard};
 use wgpu::{
     util::{BufferInitDescriptor, DeviceExt},
-    BindingResource, BindingType, Buffer, BufferUsages,
+    BindingType, Buffer, BufferUsages,
 };
 
-use crate::gpu::Gpu;
+use crate::{gpu::Gpu, misc::ids::BufferId};
 
-use super::Bindable;
+use super::{Bindable, BindableResource};
 
 pub struct VertexBuffer<T> {
     gpu: Gpu,
-    pub(crate) buffer: Buffer,
+    buffer: BufferId,
     _type: PhantomData<T>,
 }
 
 impl<T> VertexBuffer<T> {
+    pub(crate) fn get(&self) -> MappedRwLockReadGuard<Buffer> {
+        RwLockReadGuard::map(self.gpu.buffers.read(), |x| &x[&self.buffer])
+    }
+
     pub fn upload(&self, data: &[T]) -> Result<()>
     where
         T: ShaderType + ShaderSize + WriteInto,
@@ -26,7 +31,7 @@ impl<T> VertexBuffer<T> {
         let mut storage = StorageBuffer::new(&mut buffer);
         storage.write(&data)?;
 
-        self.gpu.queue.write_buffer(&self.buffer, 0, &buffer);
+        self.gpu.queue.write_buffer(&self.get(), 0, &buffer);
         Ok(())
     }
 }
@@ -40,23 +45,26 @@ impl Gpu {
         let mut storage = DynamicStorageBuffer::new(&mut buffer);
         storage.write(data)?;
 
+        let id = BufferId::new();
         let buffer = self.device.create_buffer_init(&BufferInitDescriptor {
             label: None,
             usage: BufferUsages::COPY_DST | BufferUsages::VERTEX,
             contents: &buffer,
         });
 
+        self.buffers.write().insert(id, buffer);
+
         Ok(VertexBuffer {
             gpu: self.clone(),
-            buffer,
+            buffer: id,
             _type: PhantomData,
         })
     }
 }
 
 impl<T> Bindable for VertexBuffer<T> {
-    fn as_entire_binding(&self) -> BindingResource<'_> {
-        self.buffer.as_entire_binding()
+    fn resource(&self) -> BindableResource {
+        BindableResource::Buffer(self.buffer)
     }
 
     fn binding_type(&self) -> BindingType {
@@ -65,5 +73,11 @@ impl<T> Bindable for VertexBuffer<T> {
             has_dynamic_offset: false,
             min_binding_size: None,
         }
+    }
+}
+
+impl<T> Drop for VertexBuffer<T> {
+    fn drop(&mut self) {
+        self.gpu.buffers.write().remove(&self.buffer);
     }
 }

@@ -5,45 +5,54 @@ use encase::{
     internal::{CreateFrom, WriteInto},
     DynamicStorageBuffer, ShaderType,
 };
+use parking_lot::{MappedRwLockReadGuard, RwLockReadGuard};
 use wgpu::{
     util::{BufferInitDescriptor, DeviceExt},
-    BindingResource, BindingType, Buffer, BufferDescriptor, BufferUsages, MaintainBase, MapMode,
+    BindingType, Buffer, BufferDescriptor, BufferUsages, MaintainBase, MapMode,
 };
 
 use crate::{
     gpu::Gpu,
     misc::{
+        ids::BufferId,
         mutability::{Immutable, Mutability, Mutable},
         thread_ptr::ThreadSafePtr,
     },
 };
 
-use super::Bindable;
+use super::{Bindable, BindableResource};
 
 /// A storage buffer is a buffer that can be read from or written to in the shader
 pub struct StorageBuffer<T, Mut: Mutability> {
     gpu: Gpu,
-    buffer: Buffer,
+    buffer: BufferId,
 
     _type: PhantomData<T>,
     _mut: PhantomData<Mut>,
 }
 
 impl<T: ShaderType + WriteInto + CreateFrom, Mut: Mutability> StorageBuffer<T, Mut> {
+    fn get(&self) -> MappedRwLockReadGuard<Buffer> {
+        RwLockReadGuard::map(self.gpu.buffers.read(), |x| &x[&self.buffer])
+    }
+
     /// Uploads data into the buffer
-    pub fn upload(&mut self, data: &T) -> Result<()> {
-        let mut buffer = Vec::new();
-        let mut storage = encase::StorageBuffer::new(&mut buffer);
+    pub fn upload(&self, data: &T) -> Result<()> {
+        let mut bytes = Vec::new();
+        let mut storage = encase::StorageBuffer::new(&mut bytes);
         storage.write(&data)?;
 
-        if buffer.len() > self.buffer.size() as usize {
-            self.buffer = self.gpu.device.create_buffer_init(&BufferInitDescriptor {
+        let buffer = self.get();
+        if bytes.len() > buffer.size() as usize {
+            drop(buffer);
+            let replacement = self.gpu.device.create_buffer_init(&BufferInitDescriptor {
                 label: None,
-                contents: &buffer,
+                contents: &bytes,
                 usage: BufferUsages::COPY_DST | BufferUsages::COPY_SRC | BufferUsages::STORAGE,
             });
+            self.gpu.buffers.write().insert(self.buffer, replacement);
         } else {
-            self.gpu.queue.write_buffer(&self.buffer, 0, &buffer);
+            self.gpu.queue.write_buffer(&buffer, 0, &bytes);
         }
         Ok(())
     }
@@ -51,15 +60,16 @@ impl<T: ShaderType + WriteInto + CreateFrom, Mut: Mutability> StorageBuffer<T, M
     /// Downloads the buffer from the GPU in a blocking manner. This can be
     /// pretty slow.
     pub fn download(&self) -> Result<T> {
+        let buffer = self.get();
         let staging = self.gpu.device.create_buffer(&BufferDescriptor {
             label: None,
-            size: self.buffer.size(),
+            size: buffer.size(),
             usage: BufferUsages::COPY_DST | BufferUsages::MAP_READ,
             mapped_at_creation: false,
         });
 
         self.gpu.dispatch(|encoder| {
-            encoder.copy_buffer_to_buffer(&self.buffer, 0, &staging, 0, self.buffer.size());
+            encoder.copy_buffer_to_buffer(&buffer, 0, &staging, 0, buffer.size());
         });
 
         let slice = staging.slice(..);
@@ -79,16 +89,17 @@ impl<T: ShaderType + WriteInto + CreateFrom, Mut: Mutability> StorageBuffer<T, M
     /// Requests the download of the buffer. The provided callback will be
     /// executed once the transfer finishes.
     pub fn download_async(&self, func: impl FnOnce(T) + Send + 'static) {
+        let buffer = self.get();
         let staging = self.gpu.device.create_buffer(&BufferDescriptor {
             label: None,
-            size: self.buffer.size(),
+            size: buffer.size(),
             usage: BufferUsages::COPY_DST | BufferUsages::MAP_READ,
             mapped_at_creation: false,
         });
         let staging = Box::leak(Box::new(staging));
 
         self.gpu.dispatch(|encoder| {
-            encoder.copy_buffer_to_buffer(&self.buffer, 0, staging, 0, self.buffer.size());
+            encoder.copy_buffer_to_buffer(&buffer, 0, staging, 0, buffer.size());
         });
 
         let staging = ThreadSafePtr(staging as *mut Buffer);
@@ -130,24 +141,27 @@ where
     let mut storage = encase::StorageBuffer::new(&mut buffer);
     storage.write(&data)?;
 
+    let id = BufferId::new();
     let buffer = gpu.device.create_buffer_init(&BufferInitDescriptor {
         label: None,
         usage: BufferUsages::COPY_DST | BufferUsages::COPY_SRC | BufferUsages::STORAGE,
         contents: &buffer,
     });
 
+    gpu.buffers.write().insert(id, buffer);
+
     Ok(StorageBuffer {
         gpu: gpu.clone(),
-        buffer,
+        buffer: id,
 
         _type: PhantomData,
         _mut: PhantomData,
     })
 }
 
-impl<T> Bindable for StorageBuffer<T, Mutable> {
-    fn as_entire_binding(&self) -> BindingResource<'_> {
-        self.buffer.as_entire_binding()
+impl<T: ShaderType + WriteInto + CreateFrom> Bindable for StorageBuffer<T, Mutable> {
+    fn resource(&self) -> BindableResource {
+        BindableResource::Buffer(self.buffer)
     }
 
     fn binding_type(&self) -> BindingType {
@@ -159,9 +173,9 @@ impl<T> Bindable for StorageBuffer<T, Mutable> {
     }
 }
 
-impl<T> Bindable for StorageBuffer<T, Immutable> {
-    fn as_entire_binding(&self) -> BindingResource<'_> {
-        self.buffer.as_entire_binding()
+impl<T: ShaderType + WriteInto + CreateFrom> Bindable for StorageBuffer<T, Immutable> {
+    fn resource(&self) -> BindableResource {
+        BindableResource::Buffer(self.buffer)
     }
 
     fn binding_type(&self) -> BindingType {
@@ -170,5 +184,11 @@ impl<T> Bindable for StorageBuffer<T, Immutable> {
             has_dynamic_offset: false,
             min_binding_size: None,
         }
+    }
+}
+
+impl<T, Mut: Mutability> Drop for StorageBuffer<T, Mut> {
+    fn drop(&mut self) {
+        self.gpu.buffers.write().remove(&self.buffer);
     }
 }

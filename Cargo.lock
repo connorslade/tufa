@@ -428,6 +428,7 @@ dependencies = [
  "egui-winit",
  "encase",
  "nalgebra",
+ "parking_lot",
  "pollster",
  "wgpu",
  "winit",
