@@ -5,10 +5,10 @@ use encase::ShaderType;
 use nalgebra::{Vector2, Vector4};
 use wgpu::{
     BindGroup, BindGroupDescriptor, BindGroupEntry, BindGroupLayoutDescriptor,
-    BindGroupLayoutEntry, ColorTargetState, ColorWrites, FragmentState, IndexFormat,
-    MultisampleState, PipelineCompilationOptions, PipelineLayoutDescriptor, PrimitiveState,
-    RenderPass, ShaderModule, ShaderModuleDescriptor, ShaderStages, VertexBufferLayout,
-    VertexState,
+    BindGroupLayoutEntry, BlendComponent, BlendState, ColorTargetState, ColorWrites, FragmentState,
+    IndexFormat, MultisampleState, PipelineCompilationOptions, PipelineLayoutDescriptor,
+    PrimitiveState, RenderPass, ShaderModule, ShaderModuleDescriptor, ShaderStages,
+    VertexBufferLayout, VertexState,
 };
 
 use crate::{
@@ -58,7 +58,7 @@ impl RenderPipeline {
         }
     }
 
-    pub fn draw_indexed(
+    pub fn draw(
         &mut self,
         render_pass: &mut RenderPass,
         index: &IndexBuffer,
@@ -74,7 +74,7 @@ impl RenderPipeline {
         render_pass.draw_indexed(indices, 0, 0..1);
     }
 
-    pub fn draw_screen_quad(&mut self, render_pass: &mut RenderPass) {
+    pub fn draw_quad(&mut self, render_pass: &mut RenderPass) {
         self.recreate_bind_group();
         let (vertex, index) = self.gpu.default_buffers();
 
@@ -155,7 +155,10 @@ impl<'a> RenderPipelineBuilder<'a> {
                 entry_point: Some("frag"),
                 targets: &[Some(ColorTargetState {
                     format: TEXTURE_FORMAT,
-                    blend: None,
+                    blend: Some(BlendState {
+                        color: BlendComponent::OVER,
+                        alpha: BlendComponent::OVER,
+                    }),
                     write_mask: ColorWrites::all(),
                 })],
                 compilation_options: PipelineCompilationOptions::default(),

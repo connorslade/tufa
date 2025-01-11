@@ -1,6 +1,6 @@
 use anyhow::{Ok, Result};
 use compute::{
-    buffer::{StorageBuffer, VertexBuffer},
+    buffer::VertexBuffer,
     export::{
         nalgebra::Vector2,
         wgpu::{
@@ -11,7 +11,6 @@ use compute::{
     },
     gpu::Gpu,
     interactive::{GraphicsCtx, Interactive},
-    misc::mutability::Immutable,
     pipeline::render::RenderPipeline,
 };
 use encase::ShaderType;
@@ -62,8 +61,8 @@ impl Dot {
     fn random() -> Self {
         let mut rand = thread_rng();
         Self {
-            position: Vector2::new(rand.gen(), rand.gen()),
-            radius: rand.gen::<f32>() * 50.0,
+            position: Vector2::new(rand.gen::<f32>() * 2.0 - 1.0, rand.gen::<f32>() * 2.0 - 1.0),
+            radius: rand.gen::<f32>() / 10.0,
         }
     }
 }

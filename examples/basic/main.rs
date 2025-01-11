@@ -16,7 +16,7 @@ fn main() -> Result<()> {
 
     let buffer = gpu.create_storage(Data { a: 10.0, b: 20.0 })?;
 
-    let pipeline = gpu
+    let mut pipeline = gpu
         .compute_pipeline(include_wgsl!("compute.wgsl"))
         .bind_buffer(&buffer)
         .finish();

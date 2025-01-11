@@ -11,6 +11,7 @@ struct VertexInput {
 struct VertexOutput {
     @builtin(position) pos: vec4<f32>,
     @location(1) uv: vec2<f32>,
+    @location(2) radius: f32
 };
 
 @vertex
@@ -20,14 +21,21 @@ fn vert(
 ) -> VertexOutput {
     return VertexOutput(
         vertex.pos + vec4(instance.position, 0.0, 0.0),
-        vertex.uv
+        vertex.uv,
+        instance.radius
     );
 }
 
 @fragment
 fn frag(in: VertexOutput) -> @location(0) vec4<f32> {
-    if length(in.uv - vec2(0.5)) <= 0.05 {
+    let dist = in.radius - length(in.uv - vec2(0.5));
+    let border = 0.001;
+
+    if dist > border {
         return vec4(1.0);
+    } else if dist > 0.0 {
+        return vec4(dist / border);
     }
-    return vec4(0.0);
+
+    discard;
 }

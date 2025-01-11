@@ -37,7 +37,7 @@ impl Interactive for App {
         self.ctx.window = Vector2::new(window.width, window.height);
 
         self.uniform.upload(&self.ctx).unwrap();
-        self.render.draw_screen_quad(render_pass);
+        self.render.draw_quad(render_pass);
     }
 
     fn ui(&mut self, gcx: GraphicsCtx, ctx: &Context) {
