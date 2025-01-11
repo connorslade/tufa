@@ -1,8 +1,15 @@
 @group(0) @binding(0) var<storage, read_write> particles: array<Particle>;
+@group(0) @binding(1) var<uniform> ctx: Uniform;
 
 struct Particle {
     position: vec2f,
     velocity: vec2f
+}
+
+struct Uniform {
+    window: vec2f,
+    radius: f32,
+    speed: f32
 }
 
 struct VertexOutput {
@@ -25,10 +32,10 @@ fn vert(
 
 @fragment
 fn frag(in: VertexOutput) -> @location(0) vec4<f32> {
-    let radius = 0.01;
     let border = 0.001;
 
-    let dist = radius - length(in.uv - vec2(0.5));
+    let scale = ctx.window / min(ctx.window.x, ctx.window.y);
+    let dist = ctx.radius - length((in.uv - vec2(0.5)) * scale);
 
     if dist > border {
         return vec4(1.0);

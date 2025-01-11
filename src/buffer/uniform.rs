@@ -40,13 +40,13 @@ impl<T: ShaderType + WriteInto + CreateFrom> UniformBuffer<T> {
 
 impl Gpu {
     /// Creates a new uniform buffer with the givin initial state
-    pub fn create_uniform<T>(&self, data: T) -> Result<UniformBuffer<T>>
+    pub fn create_uniform<T>(&self, data: &T) -> Result<UniformBuffer<T>>
     where
         T: ShaderType + WriteInto + CreateFrom,
     {
         let mut buffer = Vec::new();
         let mut storage = StorageBuffer::new(&mut buffer);
-        storage.write(&data)?;
+        storage.write(data)?;
 
         let id = BufferId::new();
         let buffer = self.device.create_buffer_init(&BufferInitDescriptor {

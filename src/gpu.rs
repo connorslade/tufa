@@ -99,11 +99,9 @@ impl Gpu {
 
     pub(crate) fn mark_resource_dirty(&self, resource: &BindableResource) {
         let mut pipelines = self.pipelines.write();
-        let pipeline = pipelines
-            .iter_mut()
-            .find(|(_, PipelineStatus { resources, .. })| resources.contains(resource))
-            .unwrap();
-        pipeline.1.dirty = true;
+        for (_id, PipelineStatus { resources, dirty }) in pipelines.iter_mut() {
+            *dirty |= resources.contains(resource);
+        }
     }
 }
 
