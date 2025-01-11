@@ -4,7 +4,7 @@ use anyhow::{Context, Result};
 use parking_lot::RwLock;
 use wgpu::{
     AdapterInfo, Buffer, CommandEncoder, CommandEncoderDescriptor, Device, DeviceDescriptor,
-    Instance, InstanceDescriptor, Limits, MaintainBase, PowerPreference, Queue,
+    Features, Instance, InstanceDescriptor, Limits, MaintainBase, PowerPreference, Queue,
     RequestAdapterOptions,
 };
 
@@ -49,6 +49,7 @@ impl Gpu {
         let (device, queue) = pollster::block_on(adapter.request_device(
             &DeviceDescriptor {
                 required_limits: Limits::default(),
+                required_features: Features::default() | Features::VERTEX_WRITABLE_STORAGE,
                 ..Default::default()
             },
             None,
