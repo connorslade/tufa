@@ -1,0 +1,16 @@
+[package]
+name = "dots"
+version = "0.1.0"
+edition = "2021"
+
+[[bin]]
+name = "dots"
+path = "main.rs"
+
+[dependencies]
+compute = { path = "../..", features = ["interactive"] }
+
+anyhow = "1.0.95"
+encase = { version = "0.10.0", features = ["nalgebra"] }
+image = "0.25.5"
+rand = "0.8.5"
