@@ -23,6 +23,7 @@ fn main() -> Result<()> {
     let ctx = Uniform {
         window: Vector2::zeros(),
         radius: 0.1,
+        border: 1.0,
         speed: 1.0,
     };
     let uniform = gpu.create_uniform(&ctx)?;
@@ -70,6 +71,7 @@ struct Particle {
 struct Uniform {
     window: Vector2<f32>,
     radius: f32,
+    border: f32,
     speed: f32,
 }
 
@@ -78,7 +80,7 @@ impl Particle {
         let mut rand = thread_rng();
         Self {
             position: Vector2::new(rand.gen(), rand.gen()),
-            velocity: Vector2::new(rand.gen(), rand.gen()) / 120.0,
+            velocity: (Vector2::new(rand.gen(), rand.gen()) * 2.0 - Vector2::repeat(1.0)) / 120.0,
         }
     }
 }
@@ -106,11 +108,14 @@ impl Interactive for App {
 
                 ui.separator();
 
-                dragger(ui, "Radius", &mut self.ctx.radius, 0.0..=0.01);
-                dragger(ui, "Speed", &mut self.ctx.speed, 0.0..=1.0);
+                dragger(ui, "Radius", &mut self.ctx.radius, 0.0..=0.1);
+                dragger(ui, "Border", &mut self.ctx.border, 1.0..=2.0);
+
+                ui.separator();
 
                 let mut dot_count = self.dot_count;
-                dragger(ui, "Dots", &mut dot_count, 0..=1000);
+                dragger(ui, "Dots", &mut dot_count, 0..=65_535);
+                dragger(ui, "Speed", &mut self.ctx.speed, 0.0..=1.0);
 
                 if dot_count != self.dot_count {
                     self.dot_count = dot_count;

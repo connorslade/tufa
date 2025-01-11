@@ -4,6 +4,7 @@
 struct Uniform {
     window: vec2f,
     radius: f32,
+    border: f32,
     speed: f32
 }
 
