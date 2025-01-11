@@ -9,9 +9,12 @@ use wgpu::{
 };
 
 use crate::{
-    buffer::BindableResource,
-    misc::ids::{BufferId, PipelineId},
-    pipeline::PipelineStatus,
+    buffer::{BindableResource, IndexBuffer, VertexBuffer},
+    misc::{
+        default_buffer::DefaultBuffers,
+        ids::{BufferId, PipelineId},
+    },
+    pipeline::{render::Vertex, PipelineStatus},
 };
 
 #[derive(Clone)]
@@ -28,6 +31,8 @@ pub struct GpuInner {
 
     pub(crate) pipelines: RwLock<HashMap<PipelineId, PipelineStatus>>,
     pub(crate) buffers: RwLock<HashMap<BufferId, Buffer>>,
+
+    default_buffers: DefaultBuffers,
 }
 
 impl Gpu {
@@ -57,6 +62,7 @@ impl Gpu {
                 queue,
                 info,
 
+                default_buffers: DefaultBuffers::empty(),
                 pipelines: RwLock::new(HashMap::new()),
                 buffers: RwLock::new(HashMap::new()),
             }),
@@ -84,6 +90,10 @@ impl Gpu {
             .create_command_encoder(&CommandEncoderDescriptor::default());
         proc(&mut encoder);
         self.queue.submit(iter::once(encoder.finish()));
+    }
+
+    pub(crate) fn default_buffers(&self) -> &(VertexBuffer<Vertex>, IndexBuffer) {
+        self.default_buffers.get(self)
     }
 
     pub(crate) fn mark_resource_dirty(&self, resource: &BindableResource) {
