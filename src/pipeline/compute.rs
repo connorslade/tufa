@@ -10,6 +10,8 @@ use crate::{
     misc::ids::PipelineId,
 };
 
+use super::PipelineStatus;
+
 pub struct ComputePipeline {
     gpu: Gpu,
 
@@ -29,7 +31,7 @@ pub struct ComputePipelineBuilder {
 impl ComputePipeline {
     /// Dispatches the pipeline on the specified number of workgroups
     pub fn dispatch(&mut self, workgroups: Vector3<u32>) {
-        if self.gpu.pipelines.read()[&self.id].1 {
+        if self.gpu.pipelines.read()[&self.id].dirty {
             self.bind_group = create_bind_group(&self.gpu, &self.pipeline, &self.entries);
         }
 
@@ -52,10 +54,13 @@ impl ComputePipelineBuilder {
     /// Converts the pipeline builder into an actual compte pipeline
     pub fn finish(self) -> ComputePipeline {
         let id = PipelineId::new();
-        self.gpu
-            .pipelines
-            .write()
-            .insert(id, (self.entries.clone(), false));
+        self.gpu.pipelines.write().insert(
+            id,
+            PipelineStatus {
+                resources: self.entries.clone(),
+                dirty: false,
+            },
+        );
 
         ComputePipeline {
             id,

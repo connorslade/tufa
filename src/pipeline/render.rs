@@ -17,6 +17,8 @@ use crate::{
     TEXTURE_FORMAT,
 };
 
+use super::PipelineStatus;
+
 pub const VERTEX_BUFFER_LAYOUT: VertexBufferLayout = VertexBufferLayout {
     array_stride: 32, // NOTE: WGSL alignment rules factor into this
     step_mode: VertexStepMode::Vertex,
@@ -76,7 +78,7 @@ pub struct RenderPipelineBuilder {
 
 impl RenderPipeline {
     fn recreate_bind_group(&mut self) {
-        if self.gpu.pipelines.read()[&self.id].1 {
+        if self.gpu.pipelines.read()[&self.id].dirty {
             self.bind_group = create_bind_group(&self.gpu, &self.pipeline, &self.entries);
         }
     }
@@ -171,10 +173,13 @@ impl RenderPipelineBuilder {
 
         let bind_group = create_bind_group(&self.gpu, &pipeline, &self.bind_group);
         let id = PipelineId::new();
-        self.gpu
-            .pipelines
-            .write()
-            .insert(id, (self.bind_group.clone(), false));
+        self.gpu.pipelines.write().insert(
+            id,
+            PipelineStatus {
+                resources: self.bind_group.clone(),
+                dirty: false,
+            },
+        );
 
         RenderPipeline {
             gpu: self.gpu,

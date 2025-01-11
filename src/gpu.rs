@@ -11,6 +11,7 @@ use wgpu::{
 use crate::{
     buffer::BindableResource,
     misc::ids::{BufferId, PipelineId},
+    pipeline::PipelineStatus,
 };
 
 #[derive(Clone)]
@@ -25,7 +26,7 @@ pub struct GpuInner {
     pub(crate) queue: Queue,
     pub(crate) info: AdapterInfo,
 
-    pub(crate) pipelines: RwLock<HashMap<PipelineId, (Vec<BindableResource>, bool)>>,
+    pub(crate) pipelines: RwLock<HashMap<PipelineId, PipelineStatus>>,
     pub(crate) buffers: RwLock<HashMap<BufferId, Buffer>>,
 }
 
@@ -89,9 +90,9 @@ impl Gpu {
         let mut pipelines = self.pipelines.write();
         let pipeline = pipelines
             .iter_mut()
-            .find(|(_, (resources, _))| resources.contains(resource))
+            .find(|(_, PipelineStatus { resources, .. })| resources.contains(resource))
             .unwrap();
-        pipeline.1 .1 = true;
+        pipeline.1.dirty = true;
     }
 }
 
