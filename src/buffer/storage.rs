@@ -38,12 +38,23 @@ impl<T: ShaderType + WriteInto + CreateFrom, Mut: Mutability> StorageBuffer<T, M
 
     /// Uploads data into the buffer
     pub fn upload(&self, data: &T) -> Result<()> {
+        self.upload_inner(data, false)
+    }
+
+    /// Uploads data into the buffer, reallocating to the minimum needed buffer size.
+    pub fn upload_shrink(&self, data: &T) -> Result<()> {
+        self.upload_inner(data, true)
+    }
+
+    fn upload_inner(&self, data: &T, shrink: bool) -> Result<()> {
         let mut bytes = Vec::new();
         let mut storage = encase::StorageBuffer::new(&mut bytes);
-        storage.write(&data)?;
+        storage.write(data)?;
 
         let buffer = self.get();
-        if bytes.len() > buffer.size() as usize {
+        let current_size = buffer.size() as usize;
+
+        if (bytes.len() > current_size) || (bytes.len() != current_size && shrink) {
             drop(buffer);
             let replacement = self.gpu.device.create_buffer_init(&BufferInitDescriptor {
                 label: None,
