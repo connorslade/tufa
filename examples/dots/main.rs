@@ -29,7 +29,7 @@ fn main() -> Result<()> {
     let uniform = gpu.create_uniform(&ctx)?;
 
     let dots = (0..100).map(|_| Particle::random()).collect::<Vec<_>>();
-    let dots = gpu.create_storage(dots)?;
+    let dots = gpu.create_storage(&dots)?;
 
     let render = gpu
         .render_pipeline(include_wgsl!("render.wgsl"))

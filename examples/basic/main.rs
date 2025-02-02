@@ -14,7 +14,7 @@ struct Data {
 fn main() -> Result<()> {
     let gpu = Gpu::init()?;
 
-    let buffer = gpu.create_storage(Data { a: 10.0, b: 20.0 })?;
+    let buffer = gpu.create_storage(&Data { a: 10.0, b: 20.0 })?;
 
     let mut pipeline = gpu
         .compute_pipeline(include_wgsl!("compute.wgsl"))

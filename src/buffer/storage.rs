@@ -120,14 +120,14 @@ impl<T: ShaderType + WriteInto + CreateFrom, Mut: Mutability> StorageBuffer<T, M
 }
 
 impl Gpu {
-    pub fn create_storage<T>(&self, data: T) -> Result<StorageBuffer<T, Mutable>>
+    pub fn create_storage<T>(&self, data: &T) -> Result<StorageBuffer<T, Mutable>>
     where
         T: ShaderType + WriteInto + CreateFrom,
     {
         create_storage(self, data)
     }
 
-    pub fn create_storage_read<T>(&self, data: T) -> Result<StorageBuffer<T, Immutable>>
+    pub fn create_storage_read<T>(&self, data: &T) -> Result<StorageBuffer<T, Immutable>>
     where
         T: ShaderType + WriteInto + CreateFrom,
     {
@@ -135,13 +135,13 @@ impl Gpu {
     }
 }
 
-fn create_storage<T, Mut: Mutability>(gpu: &Gpu, data: T) -> Result<StorageBuffer<T, Mut>>
+fn create_storage<T, Mut: Mutability>(gpu: &Gpu, data: &T) -> Result<StorageBuffer<T, Mut>>
 where
     T: ShaderType + WriteInto + CreateFrom,
 {
     let mut buffer = Vec::new();
     let mut storage = encase::StorageBuffer::new(&mut buffer);
-    storage.write(&data)?;
+    storage.write(data)?;
 
     let id = BufferId::new();
     let buffer = gpu.device.create_buffer_init(&BufferInitDescriptor {

@@ -21,11 +21,11 @@ const SIZE: Vector2<u32> = Vector2::new(4096, 4096);
 fn main() -> Result<()> {
     let gpu = Gpu::init()?;
 
-    let uniform = gpu.create_uniform(Uniform {
+    let uniform = gpu.create_uniform(&Uniform {
         size: SIZE,
         zoom: 0.0,
     })?;
-    let buffer = gpu.create_storage(vec![0u32; (SIZE.x * SIZE.y) as usize])?;
+    let buffer = gpu.create_storage(&vec![0u32; (SIZE.x * SIZE.y) as usize])?;
 
     let mut pipeline = gpu
         .compute_pipeline(include_wgsl!("shader.wgsl"))
