@@ -42,6 +42,15 @@ impl ComputePipeline {
             compute_pass.dispatch_workgroups(workgroups.x, workgroups.y, workgroups.z);
         });
     }
+
+    pub fn dispatch_callback(
+        &mut self,
+        workgroups: Vector3<u32>,
+        callback: impl FnOnce() + Send + 'static,
+    ) {
+        self.dispatch(workgroups);
+        self.gpu.queue.on_submitted_work_done(callback);
+    }
 }
 
 impl ComputePipelineBuilder {

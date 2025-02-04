@@ -1,4 +1,4 @@
-use std::cell::OnceCell;
+use std::sync::OnceLock;
 
 use crate::{
     buffer::{IndexBuffer, VertexBuffer},
@@ -10,13 +10,13 @@ use crate::{
 };
 
 pub(crate) struct DefaultBuffers {
-    buffers: OnceCell<(VertexBuffer<Vertex>, IndexBuffer)>,
+    buffers: OnceLock<(VertexBuffer<Vertex>, IndexBuffer)>,
 }
 
 impl DefaultBuffers {
     pub fn empty() -> Self {
         Self {
-            buffers: OnceCell::new(),
+            buffers: OnceLock::new(),
         }
     }
 

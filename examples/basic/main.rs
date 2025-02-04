@@ -1,3 +1,5 @@
+use std::time::Instant;
+
 use anyhow::Result;
 
 use compute::{
@@ -21,10 +23,12 @@ fn main() -> Result<()> {
         .bind_buffer(&buffer)
         .finish();
 
-    pipeline.dispatch(Vector3::new(1, 1, 1));
-
-    let result = buffer.download()?;
-    println!("Result: {}", result.a);
+    let now = Instant::now();
+    pipeline.dispatch_callback(Vector3::new(1, 1, 1), move || {
+        let result = buffer.download().unwrap();
+        println!("Result: {}. ({:?})", result.a, now.elapsed());
+    });
+    println!("Dispatched! ({:?})", now.elapsed());
 
     Ok(())
 }
