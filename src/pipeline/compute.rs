@@ -31,16 +31,7 @@ pub struct ComputePipelineBuilder {
 impl ComputePipeline {
     /// Dispatches the pipeline on the specified number of workgroups
     pub fn dispatch(&mut self, workgroups: Vector3<u32>) {
-        if self.gpu.pipelines.read()[&self.id].dirty {
-            self.bind_group = create_bind_group(&self.gpu, &self.pipeline, &self.entries);
-        }
-
-        self.gpu.dispatch(|encoder| {
-            let mut compute_pass = encoder.begin_compute_pass(&ComputePassDescriptor::default());
-            compute_pass.set_pipeline(&self.pipeline);
-            compute_pass.set_bind_group(0, Some(&self.bind_group), &[]);
-            compute_pass.dispatch_workgroups(workgroups.x, workgroups.y, workgroups.z);
-        });
+        self.dispatch_inner(workgroups, true);
     }
 
     pub fn dispatch_callback(
@@ -48,8 +39,60 @@ impl ComputePipeline {
         workgroups: Vector3<u32>,
         callback: impl FnOnce() + Send + 'static,
     ) {
-        self.dispatch(workgroups);
-        self.gpu.queue.on_submitted_work_done(callback);
+        self.dispatch_callback_inner(workgroups, callback, true);
+    }
+
+    /// Queues the compute shader to run with the next compute dispach, render pass, or call to [`Gpu::flush_dispatch_queue`].
+    pub fn queue_dispatch(&mut self, workgroups: Vector3<u32>) {
+        self.dispatch_inner(workgroups, false);
+    }
+
+    pub fn queue_dispatch_callback(
+        &mut self,
+        workgroups: Vector3<u32>,
+        callback: impl FnOnce() + Send + 'static,
+    ) {
+        self.dispatch_callback_inner(workgroups, callback, false);
+    }
+
+    fn recreate_bind_group(&mut self) {
+        if self.gpu.pipelines.read()[&self.id].dirty {
+            self.bind_group = create_bind_group(&self.gpu, &self.pipeline, &self.entries);
+        }
+    }
+
+    fn dispatch_inner(&mut self, workgroups: Vector3<u32>, immediate: bool) {
+        self.recreate_bind_group();
+        self.gpu.dispach(
+            |encoder| {
+                let mut compute_pass =
+                    encoder.begin_compute_pass(&ComputePassDescriptor::default());
+                compute_pass.set_pipeline(&self.pipeline);
+                compute_pass.set_bind_group(0, Some(&self.bind_group), &[]);
+                compute_pass.dispatch_workgroups(workgroups.x, workgroups.y, workgroups.z);
+            },
+            immediate,
+        );
+    }
+
+    fn dispatch_callback_inner(
+        &mut self,
+        workgroups: Vector3<u32>,
+        callback: impl FnOnce() + Send + 'static,
+        immediate: bool,
+    ) {
+        self.recreate_bind_group();
+        self.gpu.dispach_callback(
+            |encoder| {
+                let mut compute_pass =
+                    encoder.begin_compute_pass(&ComputePassDescriptor::default());
+                compute_pass.set_pipeline(&self.pipeline);
+                compute_pass.set_bind_group(0, Some(&self.bind_group), &[]);
+                compute_pass.dispatch_workgroups(workgroups.x, workgroups.y, workgroups.z);
+            },
+            callback,
+            immediate,
+        );
     }
 }
 

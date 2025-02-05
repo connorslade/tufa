@@ -81,7 +81,7 @@ impl<T: ShaderType + WriteInto + CreateFrom, Mut: Mutability> StorageBuffer<T, M
             mapped_at_creation: false,
         });
 
-        self.gpu.dispatch(|encoder| {
+        self.gpu.immediate_dispatch(|encoder| {
             encoder.copy_buffer_to_buffer(&buffer, 0, &staging, 0, buffer.size());
         });
 
@@ -111,7 +111,7 @@ impl<T: ShaderType + WriteInto + CreateFrom, Mut: Mutability> StorageBuffer<T, M
         });
         let staging = Box::leak(Box::new(staging));
 
-        self.gpu.dispatch(|encoder| {
+        self.gpu.immediate_dispatch(|encoder| {
             encoder.copy_buffer_to_buffer(&buffer, 0, staging, 0, buffer.size());
         });
 

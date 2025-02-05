@@ -1,11 +1,11 @@
-use std::{collections::HashMap, iter, ops::Deref, sync::Arc};
+use std::{collections::HashMap, mem, ops::Deref, sync::Arc};
 
 use anyhow::{Context, Result};
-use parking_lot::RwLock;
+use parking_lot::{Mutex, RwLock};
 use wgpu::{
-    AdapterInfo, Buffer, CommandEncoder, CommandEncoderDescriptor, Device, DeviceDescriptor,
-    Features, Instance, InstanceDescriptor, Limits, MaintainBase, PowerPreference, Queue,
-    RequestAdapterOptions,
+    AdapterInfo, Buffer, CommandBuffer, CommandEncoder, CommandEncoderDescriptor, Device,
+    DeviceDescriptor, Features, Instance, InstanceDescriptor, Limits, MaintainBase,
+    PowerPreference, Queue, RequestAdapterOptions,
 };
 
 use crate::{
@@ -32,7 +32,14 @@ pub struct GpuInner {
     pub(crate) pipelines: RwLock<HashMap<PipelineId, PipelineStatus>>,
     pub(crate) buffers: RwLock<HashMap<BufferId, Buffer>>,
 
+    dispatch_queue: Mutex<DispatchQueue>,
     default_buffers: DefaultBuffers,
+}
+
+#[derive(Default)]
+struct DispatchQueue {
+    command_buffers: Vec<CommandBuffer>,
+    callbacks: Vec<Box<dyn FnOnce() + Send>>,
 }
 
 impl Gpu {
@@ -63,9 +70,11 @@ impl Gpu {
                 queue,
                 info,
 
-                default_buffers: DefaultBuffers::empty(),
                 pipelines: RwLock::new(HashMap::new()),
                 buffers: RwLock::new(HashMap::new()),
+
+                dispatch_queue: Mutex::new(DispatchQueue::default()),
+                default_buffers: DefaultBuffers::empty(),
             }),
         })
     }
@@ -84,15 +93,9 @@ impl Gpu {
     pub fn wait(&self) {
         while !self.device.poll(MaintainBase::Wait).is_queue_empty() {}
     }
+}
 
-    pub(crate) fn dispatch(&self, proc: impl FnOnce(&mut CommandEncoder)) {
-        let mut encoder = self
-            .device
-            .create_command_encoder(&CommandEncoderDescriptor::default());
-        proc(&mut encoder);
-        self.queue.submit(iter::once(encoder.finish()));
-    }
-
+impl Gpu {
     pub(crate) fn default_buffers(&self) -> &(VertexBuffer<Vertex>, IndexBuffer) {
         self.default_buffers.get(self)
     }
@@ -101,6 +104,77 @@ impl Gpu {
         let mut pipelines = self.pipelines.write();
         for (_id, PipelineStatus { resources, dirty }) in pipelines.iter_mut() {
             *dirty |= resources.contains(resource);
+        }
+    }
+}
+
+impl Gpu {
+    pub fn flush_dispatch_queue(&self) {
+        let queue = mem::take(&mut *self.dispatch_queue.lock());
+
+        self.queue.submit(queue.command_buffers);
+
+        for callback in queue.callbacks.into_iter() {
+            self.queue.on_submitted_work_done(callback);
+        }
+    }
+
+    pub(crate) fn queue_dispatch(&self, proc: impl FnOnce(&mut CommandEncoder)) {
+        let mut encoder = self
+            .device
+            .create_command_encoder(&CommandEncoderDescriptor::default());
+        proc(&mut encoder);
+
+        let mut queue = self.dispatch_queue.lock();
+        queue.command_buffers.push(encoder.finish());
+    }
+
+    pub(crate) fn queue_dispatch_callback(
+        &self,
+        proc: impl FnOnce(&mut CommandEncoder),
+        callback: impl FnOnce() + Send + 'static,
+    ) {
+        self.queue_dispatch(proc);
+
+        let mut queue = self.dispatch_queue.lock();
+        queue.callbacks.push(Box::new(callback));
+    }
+
+    pub(crate) fn immediate_dispatch(&self, proc: impl FnOnce(&mut CommandEncoder)) {
+        self.queue_dispatch(proc);
+        self.flush_dispatch_queue();
+    }
+
+    pub(crate) fn immediate_dispatch_callback(
+        &self,
+        proc: impl FnOnce(&mut CommandEncoder),
+        callback: impl FnOnce() + Send + 'static,
+    ) {
+        self.queue_dispatch(proc);
+        let mut queue = self.dispatch_queue.lock();
+        queue.callbacks.push(Box::new(callback));
+
+        self.flush_dispatch_queue();
+    }
+
+    pub(crate) fn dispach(&self, proc: impl FnOnce(&mut CommandEncoder), immediate: bool) {
+        if immediate {
+            self.immediate_dispatch(proc);
+        } else {
+            self.queue_dispatch(proc);
+        }
+    }
+
+    pub(crate) fn dispach_callback(
+        &self,
+        proc: impl FnOnce(&mut CommandEncoder),
+        callback: impl FnOnce() + Send + 'static,
+        immediate: bool,
+    ) {
+        if immediate {
+            self.immediate_dispatch_callback(proc, callback);
+        } else {
+            self.queue_dispatch_callback(proc, callback);
         }
     }
 }

@@ -86,7 +86,7 @@ impl<T: Interactive> ApplicationHandler for Application<'_, T> {
                     window: &state.window,
                 };
 
-                self.gpu.dispatch(|encoder| {
+                self.gpu.immediate_dispatch(|encoder| {
                     let view = output
                         .texture
                         .create_view(&TextureViewDescriptor::default());
