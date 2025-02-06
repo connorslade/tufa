@@ -1,12 +1,13 @@
 use std::iter;
 
-use encase::{ShaderSize, ShaderType};
-use nalgebra::{Matrix4, Vector2, Vector3};
+use encase::{internal::WriteInto, ShaderSize, ShaderType};
+use nalgebra::Matrix4;
 use wgpu::{
     AccelerationStructureFlags, AccelerationStructureGeometryFlags,
     AccelerationStructureUpdateMode, BindingType, BlasBuildEntry, BlasGeometries,
     BlasGeometrySizeDescriptors, BlasTriangleGeometry, BlasTriangleGeometrySizeDescriptor,
-    CreateBlasDescriptor, CreateTlasDescriptor, TlasInstance, TlasPackage, VertexFormat,
+    CreateBlasDescriptor, CreateTlasDescriptor, IndexFormat, TlasInstance, TlasPackage,
+    VertexFormat,
 };
 
 use crate::{
@@ -15,45 +16,47 @@ use crate::{
     misc::ids::AccelerationStructureId,
 };
 
-use super::VertexBuffer;
+use super::BlasBuffer;
 
 pub struct AccelerationStructure {
     id: AccelerationStructureId,
 }
 
 pub struct Geometry {
-    transformation: Matrix4<f32>,
-    primitives: Vec<GeometryPrimitive>,
+    pub transformation: Matrix4<f32>,
+    pub primitives: Vec<GeometryPrimitive>,
 }
 
 pub struct GeometryPrimitive {
-    first_vertex: u32,
-    vertex_count: u32,
-}
+    pub first_vertex: u32,
+    pub vertex_count: u32,
 
-#[derive(ShaderType)]
-pub struct RayTracingVertex {
-    position: Vector3<f32>,
-    normal: Vector3<f32>,
-    uv: Vector2<f32>,
+    pub first_index: u32,
+    pub index_count: u32,
 }
 
 impl Gpu {
-    pub fn create_acceleration_structure(
+    pub fn create_acceleration_structure<Vertex>(
         &self,
-        vertices: VertexBuffer<RayTracingVertex>,
+        vertices: BlasBuffer<Vertex>,
+        indices: BlasBuffer<u32>,
         geometry: &[Geometry],
-    ) -> AccelerationStructure {
+    ) -> AccelerationStructure
+    where
+        Vertex: ShaderType + ShaderSize + WriteInto,
+    {
         let tlas = self.device.create_tlas(&CreateTlasDescriptor {
             label: None,
-            max_instances: 0,
-            flags: AccelerationStructureFlags::PREFER_FAST_TRACE,
+            max_instances: geometry.len() as u32,
+            flags: AccelerationStructureFlags::PREFER_FAST_BUILD,
             update_mode: AccelerationStructureUpdateMode::Build,
         });
 
         let mut package = TlasPackage::new(tlas);
 
         let vertex_buffer = vertices.get();
+        let index_buffer = indices.get();
+
         let blas = geometry
             .iter()
             .enumerate()
@@ -64,8 +67,8 @@ impl Gpu {
                     .map(|primitive| BlasTriangleGeometrySizeDescriptor {
                         vertex_format: VertexFormat::Float32x3,
                         vertex_count: primitive.vertex_count,
-                        index_format: None,
-                        index_count: None,
+                        index_format: Some(IndexFormat::Uint32),
+                        index_count: Some(primitive.index_count),
                         flags: AccelerationStructureGeometryFlags::OPAQUE,
                     })
                     .collect::<Vec<_>>();
@@ -73,7 +76,7 @@ impl Gpu {
                 let blas = self.device.create_blas(
                     &CreateBlasDescriptor {
                         label: None,
-                        flags: AccelerationStructureFlags::PREFER_FAST_TRACE,
+                        flags: AccelerationStructureFlags::PREFER_FAST_BUILD,
                         update_mode: AccelerationStructureUpdateMode::Build,
                     },
                     BlasGeometrySizeDescriptors::Triangles {
@@ -82,7 +85,7 @@ impl Gpu {
                 );
                 package[i] = Some(TlasInstance::new(
                     &blas,
-                    geometry.transformation.as_slice().try_into().unwrap(),
+                    geometry.transformation.as_slice()[..12].try_into().unwrap(),
                     i as u32,
                     0xff,
                 ));
@@ -103,9 +106,9 @@ impl Gpu {
                             size,
                             vertex_buffer: &vertex_buffer,
                             first_vertex: primitive.first_vertex,
-                            vertex_stride: RayTracingVertex::SHADER_SIZE.get(),
-                            index_buffer: None,
-                            first_index: None,
+                            vertex_stride: Vertex::SHADER_SIZE.get(),
+                            index_buffer: Some(&index_buffer),
+                            first_index: Some(primitive.first_index),
                             transform_buffer: None,
                             transform_buffer_offset: None,
                         })
