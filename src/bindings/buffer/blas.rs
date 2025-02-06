@@ -39,7 +39,7 @@ impl<T> BlasBuffer<T> {
 }
 
 impl Gpu {
-    pub fn create_blas<T>(&self, data: &[T], lbl: &str) -> Result<BlasBuffer<T>>
+    pub fn create_blas<T>(&self, data: &[T]) -> Result<BlasBuffer<T>>
     where
         T: ShaderType + ShaderSize + WriteInto,
     {
@@ -49,7 +49,7 @@ impl Gpu {
 
         let id = BufferId::new();
         let buffer = self.device.create_buffer_init(&BufferInitDescriptor {
-            label: Some(lbl),
+            label: None,
             usage: BufferUsages::COPY_DST | BufferUsages::BLAS_INPUT,
             contents: &buffer,
         });
