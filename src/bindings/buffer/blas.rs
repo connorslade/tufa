@@ -50,7 +50,7 @@ impl Gpu {
         let id = BufferId::new();
         let buffer = self.device.create_buffer_init(&BufferInitDescriptor {
             label: None,
-            usage: BufferUsages::COPY_DST | BufferUsages::BLAS_INPUT,
+            usage: BufferUsages::COPY_DST | BufferUsages::STORAGE | BufferUsages::BLAS_INPUT,
             contents: &buffer,
         });
 

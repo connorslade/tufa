@@ -40,8 +40,8 @@ impl Gpu {
     /// Make sure you enabled raytracing when initializing the Gpu
     pub fn create_acceleration_structure<Vertex>(
         &self,
-        vertices: BlasBuffer<Vertex>,
-        indices: BlasBuffer<u32>,
+        vertices: &BlasBuffer<Vertex>,
+        indices: &BlasBuffer<u32>,
         geometry: &[Geometry],
     ) -> AccelerationStructure
     where
