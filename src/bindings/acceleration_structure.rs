@@ -19,6 +19,7 @@ use crate::{
 use super::BlasBuffer;
 
 pub struct AccelerationStructure {
+    gpu: Gpu,
     id: AccelerationStructureId,
 }
 
@@ -36,6 +37,7 @@ pub struct GeometryPrimitive {
 }
 
 impl Gpu {
+    /// Make sure you enabled raytracing when initializing the Gpu
     pub fn create_acceleration_structure<Vertex>(
         &self,
         vertices: BlasBuffer<Vertex>,
@@ -130,7 +132,10 @@ impl Gpu {
         self.binding_manager
             .add_acceleration_structures(id, package);
 
-        AccelerationStructure { id }
+        AccelerationStructure {
+            gpu: self.clone(),
+            id,
+        }
     }
 }
 
@@ -141,5 +146,13 @@ impl Bindable for AccelerationStructure {
 
     fn binding_type(&self) -> BindingType {
         BindingType::AccelerationStructure
+    }
+}
+
+impl Drop for AccelerationStructure {
+    fn drop(&mut self) {
+        self.gpu
+            .binding_manager
+            .remove_acceleration_structure(self.id);
     }
 }

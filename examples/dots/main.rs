@@ -18,7 +18,7 @@ use encase::ShaderType;
 use rand::{thread_rng, Rng};
 
 fn main() -> Result<()> {
-    let gpu = Gpu::init()?;
+    let gpu = Gpu::new()?;
 
     let ctx = Uniform {
         window: Vector2::zeros(),

@@ -31,18 +31,48 @@ pub struct GpuInner {
     dispatch_queue: Mutex<DispatchQueue>,
 }
 
+pub struct GpuBuilder {
+    limits: Limits,
+    features: Features,
+    power_preference: PowerPreference,
+}
+
 #[derive(Default)]
 struct DispatchQueue {
     command_buffers: Vec<CommandBuffer>,
     callbacks: Vec<Box<dyn FnOnce() + Send>>,
 }
 
-impl Gpu {
-    // todo: nicer way to change limits
-    pub fn init() -> Result<Self> {
+impl GpuBuilder {
+    pub fn with_features(self, features: Features) -> Self {
+        Self {
+            features: self.features | features,
+            ..self
+        }
+    }
+
+    pub fn with_limits(self, limits: Limits) -> Self {
+        Self { limits, ..self }
+    }
+
+    pub fn power_preference(self, power_preference: PowerPreference) -> Self {
+        Self {
+            power_preference,
+            ..self
+        }
+    }
+
+    pub fn with_raytracing(self) -> Self {
+        self.with_features(
+            Features::EXPERIMENTAL_RAY_TRACING_ACCELERATION_STRUCTURE
+                | Features::EXPERIMENTAL_RAY_QUERY,
+        )
+    }
+
+    pub fn build(self) -> Result<Gpu> {
         let instance = Instance::new(&InstanceDescriptor::default());
         let adapter = pollster::block_on(instance.request_adapter(&RequestAdapterOptions {
-            power_preference: PowerPreference::HighPerformance,
+            power_preference: self.power_preference,
             ..Default::default()
         }))
         .context("Error requesting adapter")?;
@@ -50,17 +80,14 @@ impl Gpu {
 
         let (device, queue) = pollster::block_on(adapter.request_device(
             &DeviceDescriptor {
-                required_limits: Limits::default(),
-                required_features: Features::default()
-                    | Features::VERTEX_WRITABLE_STORAGE
-                    | Features::EXPERIMENTAL_RAY_TRACING_ACCELERATION_STRUCTURE
-                    | Features::EXPERIMENTAL_RAY_QUERY,
+                required_limits: self.limits,
+                required_features: self.features,
                 ..Default::default()
             },
             None,
         ))?;
 
-        Ok(Self {
+        Ok(Gpu {
             inner: Arc::new(GpuInner {
                 #[cfg(feature = "interactive")]
                 instance,
@@ -73,6 +100,20 @@ impl Gpu {
                 dispatch_queue: Mutex::new(DispatchQueue::default()),
             }),
         })
+    }
+}
+
+impl Gpu {
+    pub fn builder() -> GpuBuilder {
+        GpuBuilder {
+            limits: Limits::default(),
+            features: Features::VERTEX_WRITABLE_STORAGE,
+            power_preference: PowerPreference::None,
+        }
+    }
+
+    pub fn new() -> Result<Self> {
+        Self::builder().build()
     }
 
     /// Returns information on the selected adapter

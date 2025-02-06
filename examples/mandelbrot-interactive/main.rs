@@ -87,7 +87,7 @@ impl Interactive for App {
 }
 
 fn main() -> Result<()> {
-    let gpu = Gpu::init()?;
+    let gpu = Gpu::new()?;
 
     let uniform = gpu.create_uniform(&Uniform::default()).unwrap();
     let render = gpu

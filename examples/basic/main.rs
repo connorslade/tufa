@@ -14,7 +14,7 @@ struct Data {
 }
 
 fn main() -> Result<()> {
-    let gpu = Gpu::init()?;
+    let gpu = Gpu::new()?;
 
     let buffer = gpu.create_storage(&Data { a: 10.0, b: 20.0 })?;
 

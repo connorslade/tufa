@@ -19,7 +19,7 @@ struct Uniform {
 const SIZE: Vector2<u32> = Vector2::new(4096, 4096);
 
 fn main() -> Result<()> {
-    let gpu = Gpu::init()?;
+    let gpu = Gpu::new()?;
 
     let uniform = gpu.create_uniform(&Uniform {
         size: SIZE,
