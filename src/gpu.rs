@@ -45,7 +45,7 @@ struct DispatchQueue {
 impl Gpu {
     // todo: nicer way to change limits
     pub fn init() -> Result<Self> {
-        let instance = Instance::new(InstanceDescriptor::default());
+        let instance = Instance::new(&InstanceDescriptor::default());
         let adapter = pollster::block_on(instance.request_adapter(&RequestAdapterOptions {
             power_preference: PowerPreference::HighPerformance,
             ..Default::default()
