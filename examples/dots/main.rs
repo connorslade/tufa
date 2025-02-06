@@ -2,7 +2,7 @@ use std::{ops::RangeInclusive, time::Instant};
 
 use anyhow::{Ok, Result};
 use compute::{
-    buffer::{StorageBuffer, UniformBuffer},
+    bindings::{StorageBuffer, UniformBuffer},
     export::{
         egui::{emath::Numeric, Context, Slider, Ui, Window},
         nalgebra::{Vector2, Vector3},

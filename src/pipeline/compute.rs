@@ -1,11 +1,11 @@
 use nalgebra::Vector3;
 use wgpu::{
-    BindGroup, BindGroupDescriptor, BindGroupEntry, ComputePassDescriptor,
-    ComputePipelineDescriptor, PipelineCompilationOptions, ShaderModuleDescriptor,
+    BindGroup, ComputePassDescriptor, ComputePipelineDescriptor, PipelineCompilationOptions,
+    ShaderModuleDescriptor,
 };
 
 use crate::{
-    buffer::{Bindable, BindableResource},
+    bindings::{Bindable, BindableResource},
     gpu::Gpu,
     misc::ids::PipelineId,
 };
@@ -56,8 +56,12 @@ impl ComputePipeline {
     }
 
     fn recreate_bind_group(&mut self) {
-        if self.gpu.pipelines.read()[&self.id].dirty {
-            self.bind_group = create_bind_group(&self.gpu, &self.pipeline, &self.entries);
+        if self.gpu.binding_manager.get_pipeline(self.id).dirty {
+            self.bind_group = self.gpu.binding_manager.create_bind_group(
+                &self.gpu.device,
+                &self.pipeline.get_bind_group_layout(0),
+                &self.entries,
+            )
         }
     }
 
@@ -106,7 +110,7 @@ impl ComputePipelineBuilder {
     /// Converts the pipeline builder into an actual compte pipeline
     pub fn finish(self) -> ComputePipeline {
         let id = PipelineId::new();
-        self.gpu.pipelines.write().insert(
+        self.gpu.binding_manager.add_pipeline(
             id,
             PipelineStatus {
                 resources: self.entries.clone(),
@@ -116,34 +120,16 @@ impl ComputePipelineBuilder {
 
         ComputePipeline {
             id,
-            bind_group: create_bind_group(&self.gpu, &self.pipeline, &self.entries),
+            bind_group: self.gpu.binding_manager.create_bind_group(
+                &self.gpu.device,
+                &self.pipeline.get_bind_group_layout(0),
+                &self.entries,
+            ),
             gpu: self.gpu,
             pipeline: self.pipeline,
             entries: self.entries,
         }
     }
-}
-
-fn create_bind_group(
-    gpu: &Gpu,
-    pipeline: &wgpu::ComputePipeline,
-    entries: &[BindableResource],
-) -> BindGroup {
-    let buffers = gpu.buffers.read();
-    gpu.device.create_bind_group(&BindGroupDescriptor {
-        label: None,
-        layout: &pipeline.get_bind_group_layout(0),
-        entries: &entries
-            .iter()
-            .enumerate()
-            .map(|(binding, id)| BindGroupEntry {
-                binding: binding as u32,
-                resource: match id {
-                    BindableResource::Buffer(buffer) => buffers[buffer].as_entire_binding(),
-                },
-            })
-            .collect::<Vec<_>>(),
-    })
 }
 
 impl Gpu {
@@ -174,6 +160,6 @@ impl Gpu {
 
 impl Drop for ComputePipeline {
     fn drop(&mut self) {
-        self.gpu.pipelines.write().remove(&self.id);
+        self.gpu.binding_manager.remove_pipeline(self.id);
     }
 }

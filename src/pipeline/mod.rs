@@ -1,4 +1,4 @@
-use crate::buffer::BindableResource;
+use crate::bindings::BindableResource;
 
 pub mod compute;
 pub mod render;

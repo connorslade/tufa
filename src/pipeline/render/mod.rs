@@ -4,15 +4,14 @@ use consts::VERTEX_BUFFER_LAYOUT;
 use encase::ShaderType;
 use nalgebra::{Vector2, Vector4};
 use wgpu::{
-    BindGroup, BindGroupDescriptor, BindGroupEntry, BindGroupLayoutDescriptor,
-    BindGroupLayoutEntry, BlendComponent, BlendState, ColorTargetState, ColorWrites, FragmentState,
-    IndexFormat, MultisampleState, PipelineCompilationOptions, PipelineLayoutDescriptor,
-    PrimitiveState, RenderPass, ShaderModule, ShaderModuleDescriptor, ShaderStages,
-    VertexBufferLayout, VertexState,
+    BindGroup, BindGroupLayoutDescriptor, BindGroupLayoutEntry, BlendComponent, BlendState,
+    ColorTargetState, ColorWrites, FragmentState, IndexFormat, MultisampleState,
+    PipelineCompilationOptions, PipelineLayoutDescriptor, PrimitiveState, RenderPass, ShaderModule,
+    ShaderModuleDescriptor, ShaderStages, VertexBufferLayout, VertexState,
 };
 
 use crate::{
-    buffer::{Bindable, BindableResource, IndexBuffer, VertexBuffer},
+    bindings::{Bindable, BindableResource, IndexBuffer, VertexBuffer},
     gpu::Gpu,
     misc::ids::PipelineId,
     TEXTURE_FORMAT,
@@ -53,8 +52,12 @@ pub struct RenderPipelineBuilder<'a> {
 
 impl RenderPipeline {
     fn recreate_bind_group(&mut self) {
-        if self.gpu.pipelines.read()[&self.id].dirty {
-            self.bind_group = create_bind_group(&self.gpu, &self.pipeline, &self.entries);
+        if self.gpu.binding_manager.get_pipeline(self.id).dirty {
+            self.bind_group = self.gpu.binding_manager.create_bind_group(
+                &self.gpu.device,
+                &self.pipeline.get_bind_group_layout(0),
+                &self.entries,
+            );
         }
     }
 
@@ -170,9 +173,14 @@ impl<'a> RenderPipelineBuilder<'a> {
             cache: None,
         });
 
-        let bind_group = create_bind_group(&self.gpu, &pipeline, &self.bind_group);
+        let bind_group = self.gpu.binding_manager.create_bind_group(
+            &self.gpu.device,
+            &pipeline.get_bind_group_layout(0),
+            &self.bind_group,
+        );
+
         let id = PipelineId::new();
-        self.gpu.pipelines.write().insert(
+        self.gpu.binding_manager.add_pipeline(
             id,
             PipelineStatus {
                 resources: self.bind_group.clone(),
@@ -188,28 +196,6 @@ impl<'a> RenderPipelineBuilder<'a> {
             entries: self.bind_group,
         }
     }
-}
-
-fn create_bind_group(
-    gpu: &Gpu,
-    pipeline: &wgpu::RenderPipeline,
-    entries: &[BindableResource],
-) -> BindGroup {
-    let buffers = gpu.buffers.read();
-    gpu.device.create_bind_group(&BindGroupDescriptor {
-        label: None,
-        layout: &pipeline.get_bind_group_layout(0),
-        entries: &entries
-            .iter()
-            .enumerate()
-            .map(|(binding, id)| BindGroupEntry {
-                binding: binding as u32,
-                resource: match id {
-                    BindableResource::Buffer(buffer) => buffers[buffer].as_entire_binding(),
-                },
-            })
-            .collect::<Vec<_>>(),
-    })
 }
 
 impl Gpu {
@@ -228,6 +214,6 @@ impl Gpu {
 
 impl Drop for RenderPipeline {
     fn drop(&mut self) {
-        self.gpu.pipelines.write().remove(&self.id);
+        self.gpu.binding_manager.remove_pipeline(self.id);
     }
 }

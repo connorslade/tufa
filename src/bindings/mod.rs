@@ -1,16 +1,10 @@
 use wgpu::BindingType;
 
-mod index;
-mod storage;
-mod uniform;
-mod vertex;
+pub mod manager;
+mod resources;
+pub use resources::*;
 
-pub use index::IndexBuffer;
-pub use storage::StorageBuffer;
-pub use uniform::UniformBuffer;
-pub use vertex::VertexBuffer;
-
-use crate::misc::ids::BufferId;
+use crate::misc::ids::{AccelerationStructureId, BufferId};
 
 /// A resource that can be bound to a shader
 pub trait Bindable {
@@ -21,4 +15,5 @@ pub trait Bindable {
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub enum BindableResource {
     Buffer(BufferId),
+    AccelerationStructure(AccelerationStructureId),
 }

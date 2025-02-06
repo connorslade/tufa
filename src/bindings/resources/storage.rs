@@ -5,13 +5,14 @@ use encase::{
     internal::{CreateFrom, WriteInto},
     DynamicStorageBuffer, ShaderType,
 };
-use parking_lot::{MappedRwLockReadGuard, RwLockReadGuard};
+use parking_lot::MappedRwLockReadGuard;
 use wgpu::{
     util::{BufferInitDescriptor, DeviceExt},
     BindingType, Buffer, BufferDescriptor, BufferUsages, MaintainBase, MapMode,
 };
 
 use crate::{
+    bindings::{Bindable, BindableResource},
     gpu::Gpu,
     misc::{
         ids::BufferId,
@@ -19,8 +20,6 @@ use crate::{
         thread_ptr::ThreadSafePtr,
     },
 };
-
-use super::{Bindable, BindableResource};
 
 /// A storage buffer is a buffer that can be read from or written to in the shader
 pub struct StorageBuffer<T, Mut: Mutability> {
@@ -33,7 +32,7 @@ pub struct StorageBuffer<T, Mut: Mutability> {
 
 impl<T: ShaderType + WriteInto + CreateFrom, Mut: Mutability> StorageBuffer<T, Mut> {
     fn get(&self) -> MappedRwLockReadGuard<Buffer> {
-        RwLockReadGuard::map(self.gpu.buffers.read(), |x| &x[&self.buffer])
+        self.gpu.binding_manager.get_buffer(self.buffer)
     }
 
     /// Uploads data into the buffer
@@ -61,9 +60,10 @@ impl<T: ShaderType + WriteInto + CreateFrom, Mut: Mutability> StorageBuffer<T, M
                 contents: &bytes,
                 usage: BufferUsages::COPY_DST | BufferUsages::COPY_SRC | BufferUsages::STORAGE,
             });
-            self.gpu.buffers.write().insert(self.buffer, replacement);
-            self.gpu
-                .mark_resource_dirty(&BindableResource::Buffer(self.buffer));
+
+            let binding_manager = &self.gpu.binding_manager;
+            binding_manager.add_buffer(self.buffer, replacement);
+            binding_manager.mark_resource_dirty(&BindableResource::Buffer(self.buffer));
         } else {
             self.gpu.queue.write_buffer(&buffer, 0, &bytes);
         }
@@ -161,8 +161,7 @@ where
         contents: &buffer,
     });
 
-    gpu.buffers.write().insert(id, buffer);
-
+    gpu.binding_manager.add_buffer(id, buffer);
     Ok(StorageBuffer {
         gpu: gpu.clone(),
         buffer: id,
@@ -202,6 +201,6 @@ impl<T: ShaderType + WriteInto + CreateFrom> Bindable for StorageBuffer<T, Immut
 
 impl<T, Mut: Mutability> Drop for StorageBuffer<T, Mut> {
     fn drop(&mut self) {
-        self.gpu.buffers.write().remove(&self.buffer);
+        self.gpu.binding_manager.remove_buffer(self.buffer);
     }
 }

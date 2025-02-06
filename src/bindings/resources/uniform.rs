@@ -5,15 +5,17 @@ use encase::{
     internal::{CreateFrom, WriteInto},
     ShaderType, StorageBuffer,
 };
-use parking_lot::{MappedRwLockReadGuard, RwLockReadGuard};
+use parking_lot::MappedRwLockReadGuard;
 use wgpu::{
     util::{BufferInitDescriptor, DeviceExt},
     BindingType, Buffer, BufferUsages,
 };
 
-use crate::{gpu::Gpu, misc::ids::BufferId};
-
-use super::{Bindable, BindableResource};
+use crate::{
+    bindings::{Bindable, BindableResource},
+    gpu::Gpu,
+    misc::ids::BufferId,
+};
 
 /// A uniform buffer is for passing small amounts of read-only data
 pub struct UniformBuffer<T> {
@@ -24,7 +26,7 @@ pub struct UniformBuffer<T> {
 
 impl<T: ShaderType + WriteInto + CreateFrom> UniformBuffer<T> {
     fn get(&self) -> MappedRwLockReadGuard<Buffer> {
-        RwLockReadGuard::map(self.gpu.buffers.read(), |x| &x[&self.buffer])
+        self.gpu.binding_manager.get_buffer(self.buffer)
     }
 
     /// Uploads data into the buffer
@@ -55,8 +57,7 @@ impl Gpu {
             contents: &buffer,
         });
 
-        self.buffers.write().insert(id, buffer);
-
+        self.binding_manager.add_buffer(id, buffer);
         Ok(UniformBuffer {
             gpu: self.clone(),
             buffer: id,
@@ -81,6 +82,6 @@ impl<T> Bindable for UniformBuffer<T> {
 
 impl<T> Drop for UniformBuffer<T> {
     fn drop(&mut self) {
-        self.gpu.buffers.write().remove(&self.buffer);
+        self.gpu.binding_manager.remove_buffer(self.buffer);
     }
 }

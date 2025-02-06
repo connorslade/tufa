@@ -1,6 +1,6 @@
 use wgpu::TextureFormat;
 
-pub mod buffer;
+pub mod bindings;
 pub mod gpu;
 #[cfg(feature = "interactive")]
 pub mod interactive;

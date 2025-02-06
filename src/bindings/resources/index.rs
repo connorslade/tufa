@@ -1,12 +1,15 @@
 use anyhow::Result;
-use parking_lot::{MappedRwLockReadGuard, RwLockReadGuard};
+use parking_lot::MappedRwLockReadGuard;
 use wgpu::{
     util::{BufferInitDescriptor, DeviceExt},
     BindingType, Buffer, BufferUsages,
 };
 
-use super::{Bindable, BindableResource};
-use crate::{gpu::Gpu, misc::ids::BufferId};
+use crate::{
+    bindings::{Bindable, BindableResource},
+    gpu::Gpu,
+    misc::ids::BufferId,
+};
 
 pub struct IndexBuffer {
     gpu: Gpu,
@@ -15,7 +18,7 @@ pub struct IndexBuffer {
 
 impl IndexBuffer {
     pub(crate) fn get(&self) -> MappedRwLockReadGuard<Buffer> {
-        RwLockReadGuard::map(self.gpu.buffers.read(), |x| &x[&self.buffer])
+        self.gpu.binding_manager.get_buffer(self.buffer)
     }
 
     pub fn upload(&self, data: &[u32]) -> Result<()> {
@@ -34,8 +37,7 @@ impl Gpu {
             contents: bytemuck::cast_slice(data),
         });
 
-        self.buffers.write().insert(id, buffer);
-
+        self.binding_manager.add_buffer(id, buffer);
         Ok(IndexBuffer {
             gpu: self.clone(),
             buffer: id,
@@ -59,6 +61,6 @@ impl Bindable for IndexBuffer {
 
 impl Drop for IndexBuffer {
     fn drop(&mut self) {
-        self.gpu.buffers.write().remove(&self.buffer);
+        self.gpu.binding_manager.remove_buffer(self.buffer);
     }
 }

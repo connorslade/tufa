@@ -1,7 +1,7 @@
 use anyhow::Result;
 
 use compute::{
-    buffer::UniformBuffer,
+    bindings::UniformBuffer,
     export::{
         egui::{self, Context, DragValue, Slider},
         encase::ShaderType,

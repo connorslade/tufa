@@ -16,3 +16,4 @@ macro_rules! id_type {
 
 id_type!(BufferId);
 id_type!(PipelineId);
+id_type!(AccelerationStructureId);

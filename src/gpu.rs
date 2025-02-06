@@ -1,20 +1,17 @@
-use std::{collections::HashMap, mem, ops::Deref, sync::Arc};
+use std::{mem, ops::Deref, sync::Arc};
 
 use anyhow::{Context, Result};
-use parking_lot::{Mutex, RwLock};
+use parking_lot::Mutex;
 use wgpu::{
-    AdapterInfo, Buffer, CommandBuffer, CommandEncoder, CommandEncoderDescriptor, Device,
-    DeviceDescriptor, Features, Instance, InstanceDescriptor, Limits, MaintainBase,
-    PowerPreference, Queue, RequestAdapterOptions,
+    AdapterInfo, CommandBuffer, CommandEncoder, CommandEncoderDescriptor, Device, DeviceDescriptor,
+    Features, Instance, InstanceDescriptor, Limits, MaintainBase, PowerPreference, Queue,
+    RequestAdapterOptions,
 };
 
 use crate::{
-    buffer::{BindableResource, IndexBuffer, VertexBuffer},
-    misc::{
-        default_buffer::DefaultBuffers,
-        ids::{BufferId, PipelineId},
-    },
-    pipeline::{render::Vertex, PipelineStatus},
+    bindings::{manager::BindingManager, IndexBuffer, VertexBuffer},
+    misc::default_buffer::DefaultBuffers,
+    pipeline::render::Vertex,
 };
 
 #[derive(Clone)]
@@ -29,11 +26,9 @@ pub struct GpuInner {
     pub(crate) queue: Queue,
     pub(crate) info: AdapterInfo,
 
-    pub(crate) pipelines: RwLock<HashMap<PipelineId, PipelineStatus>>,
-    pub(crate) buffers: RwLock<HashMap<BufferId, Buffer>>,
-
-    dispatch_queue: Mutex<DispatchQueue>,
+    pub(crate) binding_manager: BindingManager,
     default_buffers: DefaultBuffers,
+    dispatch_queue: Mutex<DispatchQueue>,
 }
 
 #[derive(Default)]
@@ -56,7 +51,10 @@ impl Gpu {
         let (device, queue) = pollster::block_on(adapter.request_device(
             &DeviceDescriptor {
                 required_limits: Limits::default(),
-                required_features: Features::default() | Features::VERTEX_WRITABLE_STORAGE,
+                required_features: Features::default()
+                    | Features::VERTEX_WRITABLE_STORAGE
+                    | Features::EXPERIMENTAL_RAY_TRACING_ACCELERATION_STRUCTURE
+                    | Features::EXPERIMENTAL_RAY_QUERY,
                 ..Default::default()
             },
             None,
@@ -70,11 +68,9 @@ impl Gpu {
                 queue,
                 info,
 
-                pipelines: RwLock::new(HashMap::new()),
-                buffers: RwLock::new(HashMap::new()),
-
-                dispatch_queue: Mutex::new(DispatchQueue::default()),
+                binding_manager: BindingManager::new(),
                 default_buffers: DefaultBuffers::empty(),
+                dispatch_queue: Mutex::new(DispatchQueue::default()),
             }),
         })
     }
@@ -98,13 +94,6 @@ impl Gpu {
 impl Gpu {
     pub(crate) fn default_buffers(&self) -> &(VertexBuffer<Vertex>, IndexBuffer) {
         self.default_buffers.get(self)
-    }
-
-    pub(crate) fn mark_resource_dirty(&self, resource: &BindableResource) {
-        let mut pipelines = self.pipelines.write();
-        for (_id, PipelineStatus { resources, dirty }) in pipelines.iter_mut() {
-            *dirty |= resources.contains(resource);
-        }
     }
 }
 
@@ -153,6 +142,7 @@ impl Gpu {
         self.queue_dispatch(proc);
         let mut queue = self.dispatch_queue.lock();
         queue.callbacks.push(Box::new(callback));
+        drop(queue);
 
         self.flush_dispatch_queue();
     }
