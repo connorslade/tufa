@@ -50,7 +50,7 @@ impl Gpu {
         let tlas = self.device.create_tlas(&CreateTlasDescriptor {
             label: None,
             max_instances: geometry.len() as u32,
-            flags: AccelerationStructureFlags::PREFER_FAST_BUILD,
+            flags: AccelerationStructureFlags::PREFER_FAST_TRACE,
             update_mode: AccelerationStructureUpdateMode::Build,
         });
 
@@ -78,7 +78,7 @@ impl Gpu {
                 let blas = self.device.create_blas(
                     &CreateBlasDescriptor {
                         label: None,
-                        flags: AccelerationStructureFlags::PREFER_FAST_BUILD,
+                        flags: AccelerationStructureFlags::PREFER_FAST_TRACE,
                         update_mode: AccelerationStructureUpdateMode::Build,
                     },
                     BlasGeometrySizeDescriptors::Triangles {
@@ -103,17 +103,16 @@ impl Gpu {
                 let geometries = geometry
                     .primitives
                     .iter()
-                    .flat_map(|primitive| {
-                        size.iter().map(|size| BlasTriangleGeometry {
-                            size,
-                            vertex_buffer: &vertex_buffer,
-                            first_vertex: primitive.first_vertex,
-                            vertex_stride: Vertex::SHADER_SIZE.get(),
-                            index_buffer: Some(&index_buffer),
-                            first_index: Some(primitive.first_index),
-                            transform_buffer: None,
-                            transform_buffer_offset: None,
-                        })
+                    .zip(size.iter())
+                    .map(|(primitive, size)| BlasTriangleGeometry {
+                        size,
+                        vertex_buffer: &vertex_buffer,
+                        first_vertex: primitive.first_vertex,
+                        vertex_stride: Vertex::SHADER_SIZE.get(),
+                        index_buffer: Some(&index_buffer),
+                        first_index: Some(primitive.first_index),
+                        transform_buffer: None,
+                        transform_buffer_offset: None,
                     })
                     .collect::<Vec<_>>();
 
