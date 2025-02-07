@@ -77,6 +77,16 @@ impl<T> Bindable for BlasBuffer<T> {
     }
 }
 
+impl<T> Clone for BlasBuffer<T> {
+    fn clone(&self) -> Self {
+        Self {
+            gpu: self.gpu.clone(),
+            buffer: self.buffer,
+            _type: PhantomData,
+        }
+    }
+}
+
 impl<T> Drop for BlasBuffer<T> {
     fn drop(&mut self) {
         self.gpu.binding_manager.remove_buffer(self.buffer);

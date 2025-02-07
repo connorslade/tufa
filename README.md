@@ -1,6 +1,10 @@
 # `compute`
 
-A wgpu abstraction layer for simplified usage of compute shaders.
+A wgpu abstraction layer.
+Was orgianly just for compute shaders, but now has support for basic rendering that often comes up when making simulations where often need an egui interface and a quad rendered on the screen
+Also it has support for Ray Tracing acceleration structures.
+
+See [connorslade/ray-tracing](https://github.com/connorslade/ray-tracing), [examples/mandelbrot-interactive](https://github.com/connorslade/compute/tree/main/examples/mandelbrot-interactive), and [connorslade/physics](https://github.com/connorslade/physics) for some neat examples.
 
 ## Example
 
@@ -45,8 +49,8 @@ fn evaluate(c: vec2<f32>) -> vec3<f32> {
     var z = vec2(0.0);
     for (var i = 0; i < N; i++) {
         z = cSq(z) + c;
-        
-        if i + 1 == N { 
+
+        if i + 1 == N {
             break;
         }
 
@@ -55,7 +59,7 @@ fn evaluate(c: vec2<f32>) -> vec3<f32> {
             return hueShift(vec3(1.0, 0.0, 0.0), value * 2.0 * PI);
         }
     }
-    
+
     return vec3(0.0);
 }
 

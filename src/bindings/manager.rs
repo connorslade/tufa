@@ -100,7 +100,20 @@ impl BindingManager {
         self.acceleration_structures.write().insert(id, package);
     }
 
+    pub(crate) fn get_acceleration_structures(
+        &self,
+        id: AccelerationStructureId,
+    ) -> MappedRwLockReadGuard<TlasPackage> {
+        RwLockReadGuard::map(self.acceleration_structures.read(), |x| &x[&id])
+    }
+
     pub(crate) fn remove_acceleration_structure(&self, id: AccelerationStructureId) {
         self.acceleration_structures.write().remove(&id);
+    }
+}
+
+impl Default for BindingManager {
+    fn default() -> Self {
+        Self::new()
     }
 }
