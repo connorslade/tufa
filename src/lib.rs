@@ -14,5 +14,3 @@ pub mod export {
 }
 
 const TEXTURE_FORMAT: TextureFormat = TextureFormat::Bgra8Unorm;
-
-// todo storage vs uniform buffers

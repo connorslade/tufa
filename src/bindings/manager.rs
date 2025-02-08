@@ -1,33 +1,28 @@
 use std::collections::HashMap;
 
 use parking_lot::{MappedRwLockReadGuard, RwLock, RwLockReadGuard};
-use wgpu::{
-    BindGroup, BindGroupDescriptor, BindGroupEntry, BindGroupLayout, Buffer, Device, TlasPackage,
-};
+use wgpu::{BindGroup, BindGroupDescriptor, BindGroupEntry, BindGroupLayout, Device};
 
-use crate::{
-    misc::ids::{AccelerationStructureId, BufferId, PipelineId},
-    pipeline::PipelineStatus,
-};
+use crate::{misc::ids::PipelineId, pipeline::PipelineStatus};
 
-use super::BindableResource;
+use super::{BindableResource, BindableResourceId};
+
+type RwMap<K, V> = RwLock<HashMap<K, V>>;
 
 pub struct BindingManager {
-    pub(crate) pipelines: RwLock<HashMap<PipelineId, PipelineStatus>>,
-    pub(crate) buffers: RwLock<HashMap<BufferId, Buffer>>,
-    pub(crate) acceleration_structures: RwLock<HashMap<AccelerationStructureId, TlasPackage>>,
+    pipelines: RwMap<PipelineId, PipelineStatus>,
+    resources: RwMap<BindableResourceId, BindableResource>,
 }
 
 impl BindingManager {
     pub fn new() -> Self {
         Self {
             pipelines: RwLock::new(HashMap::new()),
-            buffers: RwLock::new(HashMap::new()),
-            acceleration_structures: RwLock::new(HashMap::new()),
+            resources: RwLock::new(HashMap::new()),
         }
     }
 
-    pub(crate) fn mark_resource_dirty(&self, resource: &BindableResource) {
+    pub(crate) fn mark_resource_dirty(&self, resource: &BindableResourceId) {
         let mut pipelines = self.pipelines.write();
         for (_id, PipelineStatus { resources, dirty }) in pipelines.iter_mut() {
             *dirty |= resources.contains(resource);
@@ -38,27 +33,23 @@ impl BindingManager {
         &self,
         device: &Device,
         layout: &BindGroupLayout,
-        entries: &[BindableResource],
+        entries: &[BindableResourceId],
     ) -> BindGroup {
-        let buffers = self.buffers.read();
-        let acceleration_structures = self.acceleration_structures.read();
+        let resources = self.resources.read();
+
+        let entries = &entries
+            .iter()
+            .enumerate()
+            .map(|(binding, id)| BindGroupEntry {
+                binding: binding as u32,
+                resource: resources[id].as_binding(),
+            })
+            .collect::<Vec<_>>();
 
         device.create_bind_group(&BindGroupDescriptor {
             label: None,
             layout,
-            entries: &entries
-                .iter()
-                .enumerate()
-                .map(|(binding, id)| BindGroupEntry {
-                    binding: binding as u32,
-                    resource: match id {
-                        BindableResource::Buffer(id) => buffers[id].as_entire_binding(),
-                        BindableResource::AccelerationStructure(id) => {
-                            acceleration_structures[id].as_binding()
-                        }
-                    },
-                })
-                .collect::<Vec<_>>(),
+            entries,
         })
     }
 }
@@ -78,37 +69,23 @@ impl BindingManager {
 }
 
 impl BindingManager {
-    pub(crate) fn add_buffer(&self, id: BufferId, buffer: Buffer) {
-        self.buffers.write().insert(id, buffer);
-    }
-
-    pub(crate) fn get_buffer(&self, id: BufferId) -> MappedRwLockReadGuard<Buffer> {
-        RwLockReadGuard::map(self.buffers.read(), |x| &x[&id])
-    }
-
-    pub(crate) fn remove_buffer(&self, id: BufferId) {
-        self.buffers.write().remove(&id);
-    }
-}
-
-impl BindingManager {
-    pub(crate) fn add_acceleration_structures(
+    pub(crate) fn add_resource(
         &self,
-        id: AccelerationStructureId,
-        package: TlasPackage,
+        id: impl Into<BindableResourceId>,
+        resource: impl Into<BindableResource>,
     ) {
-        self.acceleration_structures.write().insert(id, package);
+        self.resources.write().insert(id.into(), resource.into());
     }
 
-    pub(crate) fn get_acceleration_structures(
+    pub(crate) fn get_resource(
         &self,
-        id: AccelerationStructureId,
-    ) -> MappedRwLockReadGuard<TlasPackage> {
-        RwLockReadGuard::map(self.acceleration_structures.read(), |x| &x[&id])
+        id: impl Into<BindableResourceId>,
+    ) -> MappedRwLockReadGuard<BindableResource> {
+        RwLockReadGuard::map(self.resources.read(), |x| &x[&id.into()])
     }
 
-    pub(crate) fn remove_acceleration_structure(&self, id: AccelerationStructureId) {
-        self.acceleration_structures.write().remove(&id);
+    pub(crate) fn remove_resource(&self, id: impl Into<BindableResourceId>) {
+        self.resources.write().remove(&id.into());
     }
 }
 

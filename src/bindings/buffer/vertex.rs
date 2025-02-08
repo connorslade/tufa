@@ -9,7 +9,7 @@ use wgpu::{
 };
 
 use crate::{
-    bindings::{Bindable, BindableResource},
+    bindings::{Bindable, BindableResourceId},
     gpu::Gpu,
     misc::ids::BufferId,
 };
@@ -22,7 +22,9 @@ pub struct VertexBuffer<T> {
 
 impl<T> VertexBuffer<T> {
     pub(crate) fn get(&self) -> MappedRwLockReadGuard<Buffer> {
-        self.gpu.binding_manager.get_buffer(self.buffer)
+        MappedRwLockReadGuard::map(self.gpu.binding_manager.get_resource(self.buffer), |x| {
+            x.expect_buffer()
+        })
     }
 
     pub fn upload(&self, data: &[T]) -> Result<()>
@@ -54,7 +56,7 @@ impl Gpu {
             contents: &buffer,
         });
 
-        self.binding_manager.add_buffer(id, buffer);
+        self.binding_manager.add_resource(id, buffer);
         Ok(VertexBuffer {
             gpu: self.clone(),
             buffer: id,
@@ -64,8 +66,8 @@ impl Gpu {
 }
 
 impl<T> Bindable for VertexBuffer<T> {
-    fn resource(&self) -> BindableResource {
-        BindableResource::Buffer(self.buffer)
+    fn resource_id(&self) -> BindableResourceId {
+        BindableResourceId::Buffer(self.buffer)
     }
 
     fn binding_type(&self) -> BindingType {
@@ -79,6 +81,6 @@ impl<T> Bindable for VertexBuffer<T> {
 
 impl<T> Drop for VertexBuffer<T> {
     fn drop(&mut self) {
-        self.gpu.binding_manager.remove_buffer(self.buffer);
+        self.gpu.binding_manager.remove_resource(self.buffer);
     }
 }

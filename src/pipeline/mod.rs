@@ -1,9 +1,9 @@
-use crate::bindings::BindableResource;
+use crate::bindings::BindableResourceId;
 
 pub mod compute;
 pub mod render;
 
 pub(crate) struct PipelineStatus {
-    pub resources: Vec<BindableResource>,
+    pub resources: Vec<BindableResourceId>,
     pub dirty: bool,
 }

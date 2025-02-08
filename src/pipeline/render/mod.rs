@@ -11,7 +11,7 @@ use wgpu::{
 };
 
 use crate::{
-    bindings::{Bindable, BindableResource, IndexBuffer, VertexBuffer},
+    bindings::{Bindable, BindableResourceId, IndexBuffer, VertexBuffer},
     gpu::Gpu,
     misc::ids::PipelineId,
     TEXTURE_FORMAT,
@@ -37,7 +37,7 @@ pub struct RenderPipeline {
 
     id: PipelineId,
     pipeline: wgpu::RenderPipeline,
-    entries: Vec<BindableResource>,
+    entries: Vec<BindableResourceId>,
     bind_group: BindGroup,
 }
 
@@ -47,7 +47,7 @@ pub struct RenderPipelineBuilder<'a> {
     module: ShaderModule,
     vertex_layout: Option<VertexBufferLayout<'a>>,
     bind_group_layout: Vec<BindGroupLayoutEntry>,
-    bind_group: Vec<BindableResource>,
+    bind_group: Vec<BindableResourceId>,
 }
 
 impl RenderPipeline {
@@ -109,7 +109,7 @@ impl<'a> RenderPipelineBuilder<'a> {
     pub fn bind_buffer(mut self, entry: &impl Bindable, visibility: ShaderStages) -> Self {
         let binding = self.bind_group.len() as u32;
 
-        self.bind_group.push(entry.resource());
+        self.bind_group.push(entry.resource_id());
         self.bind_group_layout.push(BindGroupLayoutEntry {
             binding,
             visibility,

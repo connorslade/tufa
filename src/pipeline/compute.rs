@@ -5,7 +5,7 @@ use wgpu::{
 };
 
 use crate::{
-    bindings::{Bindable, BindableResource},
+    bindings::{Bindable, BindableResourceId},
     gpu::Gpu,
     misc::ids::PipelineId,
 };
@@ -17,7 +17,7 @@ pub struct ComputePipeline {
 
     id: PipelineId,
     pipeline: wgpu::ComputePipeline,
-    entries: Vec<BindableResource>,
+    entries: Vec<BindableResourceId>,
     bind_group: BindGroup,
 }
 
@@ -25,7 +25,7 @@ pub struct ComputePipelineBuilder {
     gpu: Gpu,
 
     pipeline: wgpu::ComputePipeline,
-    entries: Vec<BindableResource>,
+    entries: Vec<BindableResourceId>,
 }
 
 impl ComputePipeline {
@@ -103,7 +103,7 @@ impl ComputePipeline {
 impl ComputePipelineBuilder {
     /// Adds the supplied buffer as the next entry in the bind group, starting with binding zero and counting up.
     pub fn bind_buffer(mut self, entry: &impl Bindable) -> Self {
-        self.entries.push(entry.resource());
+        self.entries.push(entry.resource_id());
         self
     }
 

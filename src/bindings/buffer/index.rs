@@ -6,7 +6,7 @@ use wgpu::{
 };
 
 use crate::{
-    bindings::{Bindable, BindableResource},
+    bindings::{Bindable, BindableResourceId},
     gpu::Gpu,
     misc::ids::BufferId,
 };
@@ -18,7 +18,9 @@ pub struct IndexBuffer {
 
 impl IndexBuffer {
     pub(crate) fn get(&self) -> MappedRwLockReadGuard<Buffer> {
-        self.gpu.binding_manager.get_buffer(self.buffer)
+        MappedRwLockReadGuard::map(self.gpu.binding_manager.get_resource(self.buffer), |x| {
+            x.expect_buffer()
+        })
     }
 
     pub fn upload(&self, data: &[u32]) -> Result<()> {
@@ -37,7 +39,7 @@ impl Gpu {
             contents: bytemuck::cast_slice(data),
         });
 
-        self.binding_manager.add_buffer(id, buffer);
+        self.binding_manager.add_resource(id, buffer);
         Ok(IndexBuffer {
             gpu: self.clone(),
             buffer: id,
@@ -46,8 +48,8 @@ impl Gpu {
 }
 
 impl Bindable for IndexBuffer {
-    fn resource(&self) -> BindableResource {
-        BindableResource::Buffer(self.buffer)
+    fn resource_id(&self) -> BindableResourceId {
+        BindableResourceId::Buffer(self.buffer)
     }
 
     fn binding_type(&self) -> BindingType {
@@ -61,6 +63,6 @@ impl Bindable for IndexBuffer {
 
 impl Drop for IndexBuffer {
     fn drop(&mut self) {
-        self.gpu.binding_manager.remove_buffer(self.buffer);
+        self.gpu.binding_manager.remove_resource(self.buffer);
     }
 }

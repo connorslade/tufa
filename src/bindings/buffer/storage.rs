@@ -12,7 +12,7 @@ use wgpu::{
 };
 
 use crate::{
-    bindings::{Bindable, BindableResource},
+    bindings::{Bindable, BindableResourceId},
     gpu::Gpu,
     misc::{
         ids::BufferId,
@@ -32,7 +32,9 @@ pub struct StorageBuffer<T, Mut: Mutability> {
 
 impl<T: ShaderType + WriteInto + CreateFrom, Mut: Mutability> StorageBuffer<T, Mut> {
     fn get(&self) -> MappedRwLockReadGuard<Buffer> {
-        self.gpu.binding_manager.get_buffer(self.buffer)
+        MappedRwLockReadGuard::map(self.gpu.binding_manager.get_resource(self.buffer), |x| {
+            x.expect_buffer()
+        })
     }
 
     /// Uploads data into the buffer
@@ -62,8 +64,8 @@ impl<T: ShaderType + WriteInto + CreateFrom, Mut: Mutability> StorageBuffer<T, M
             });
 
             let binding_manager = &self.gpu.binding_manager;
-            binding_manager.add_buffer(self.buffer, replacement);
-            binding_manager.mark_resource_dirty(&BindableResource::Buffer(self.buffer));
+            binding_manager.add_resource(self.buffer, replacement);
+            binding_manager.mark_resource_dirty(&BindableResourceId::Buffer(self.buffer));
         } else {
             self.gpu.queue.write_buffer(&buffer, 0, &bytes);
         }
@@ -161,7 +163,7 @@ where
         contents: &buffer,
     });
 
-    gpu.binding_manager.add_buffer(id, buffer);
+    gpu.binding_manager.add_resource(id, buffer);
     Ok(StorageBuffer {
         gpu: gpu.clone(),
         buffer: id,
@@ -172,8 +174,8 @@ where
 }
 
 impl<T: ShaderType + WriteInto + CreateFrom> Bindable for StorageBuffer<T, Mutable> {
-    fn resource(&self) -> BindableResource {
-        BindableResource::Buffer(self.buffer)
+    fn resource_id(&self) -> BindableResourceId {
+        BindableResourceId::Buffer(self.buffer)
     }
 
     fn binding_type(&self) -> BindingType {
@@ -186,8 +188,8 @@ impl<T: ShaderType + WriteInto + CreateFrom> Bindable for StorageBuffer<T, Mutab
 }
 
 impl<T: ShaderType + WriteInto + CreateFrom> Bindable for StorageBuffer<T, Immutable> {
-    fn resource(&self) -> BindableResource {
-        BindableResource::Buffer(self.buffer)
+    fn resource_id(&self) -> BindableResourceId {
+        BindableResourceId::Buffer(self.buffer)
     }
 
     fn binding_type(&self) -> BindingType {
@@ -201,6 +203,6 @@ impl<T: ShaderType + WriteInto + CreateFrom> Bindable for StorageBuffer<T, Immut
 
 impl<T, Mut: Mutability> Drop for StorageBuffer<T, Mut> {
     fn drop(&mut self) {
-        self.gpu.binding_manager.remove_buffer(self.buffer);
+        self.gpu.binding_manager.remove_resource(self.buffer);
     }
 }

@@ -11,7 +11,7 @@ use wgpu::{
 };
 
 use crate::{
-    bindings::{Bindable, BindableResource},
+    bindings::{Bindable, BindableResourceId},
     gpu::Gpu,
     misc::ids::AccelerationStructureId,
 };
@@ -83,11 +83,13 @@ where
             .collect::<Vec<_>>();
 
         let binding_manager = &self.gpu.binding_manager;
-        binding_manager.mark_resource_dirty(&BindableResource::AccelerationStructure(self.id));
+        binding_manager.mark_resource_dirty(&BindableResourceId::AccelerationStructure(self.id));
 
-        let package = binding_manager.get_acceleration_structures(self.id);
+        let resource = binding_manager.get_resource(self.id);
+        let package = resource.expect_tlas_package();
+
         self.gpu.immediate_dispatch(|encoder| {
-            encoder.build_acceleration_structures(entries.iter(), iter::once(&*package));
+            encoder.build_acceleration_structures(entries.iter(), iter::once(package));
         });
     }
 }
@@ -151,8 +153,7 @@ impl Gpu {
             .collect::<Vec<_>>();
 
         let id = AccelerationStructureId::new();
-        self.binding_manager
-            .add_acceleration_structures(id, package);
+        self.binding_manager.add_resource(id, package);
 
         let this = AccelerationStructure {
             gpu: self.clone(),
@@ -172,8 +173,8 @@ impl Gpu {
 }
 
 impl<Vertex> Bindable for AccelerationStructure<Vertex> {
-    fn resource(&self) -> BindableResource {
-        BindableResource::AccelerationStructure(self.id)
+    fn resource_id(&self) -> BindableResourceId {
+        BindableResourceId::AccelerationStructure(self.id)
     }
 
     fn binding_type(&self) -> BindingType {
@@ -183,8 +184,6 @@ impl<Vertex> Bindable for AccelerationStructure<Vertex> {
 
 impl<Vertex> Drop for AccelerationStructure<Vertex> {
     fn drop(&mut self) {
-        self.gpu
-            .binding_manager
-            .remove_acceleration_structure(self.id);
+        self.gpu.binding_manager.remove_resource(self.id);
     }
 }
