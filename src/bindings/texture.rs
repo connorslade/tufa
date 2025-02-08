@@ -11,8 +11,7 @@ use super::{Bindable, BindableResourceId};
 pub struct Texture {
     gpu: Gpu,
 
-    id: TextureId,
-    texture: wgpu::Texture,
+    pub(crate) id: TextureId,
 }
 
 impl Gpu {
@@ -39,7 +38,6 @@ impl Gpu {
         Texture {
             gpu: self.clone(),
             id,
-            texture,
         }
     }
 }
@@ -55,5 +53,11 @@ impl Bindable for Texture {
             view_dimension: TextureViewDimension::D2,
             multisampled: false,
         }
+    }
+}
+
+impl Drop for Texture {
+    fn drop(&mut self) {
+        self.gpu.binding_manager.remove_resource(self.id);
     }
 }

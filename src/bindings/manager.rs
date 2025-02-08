@@ -1,17 +1,24 @@
 use std::collections::HashMap;
 
 use parking_lot::{MappedRwLockReadGuard, RwLock, RwLockReadGuard};
-use wgpu::{BindGroup, BindGroupDescriptor, BindGroupEntry, BindGroupLayout, Device};
+use wgpu::{
+    BindGroup, BindGroupDescriptor, BindGroupEntry, BindGroupLayout, BindingResource, Device,
+};
 
-use crate::{misc::ids::PipelineId, pipeline::PipelineStatus};
+use crate::{
+    misc::ids::{PipelineId, TextureCollectionId, TextureId},
+    pipeline::PipelineStatus,
+};
 
 use super::{BindableResource, BindableResourceId};
 
 type RwMap<K, V> = RwLock<HashMap<K, V>>;
 
+// todo: reference count resources
 pub struct BindingManager {
     pipelines: RwMap<PipelineId, PipelineStatus>,
     resources: RwMap<BindableResourceId, BindableResource>,
+    collections: RwMap<TextureCollectionId, Vec<TextureId>>,
 }
 
 impl BindingManager {
@@ -19,6 +26,7 @@ impl BindingManager {
         Self {
             pipelines: RwLock::new(HashMap::new()),
             resources: RwLock::new(HashMap::new()),
+            collections: RwLock::new(HashMap::new()),
         }
     }
 
@@ -36,13 +44,43 @@ impl BindingManager {
         entries: &[BindableResourceId],
     ) -> BindGroup {
         let resources = self.resources.read();
+        let collections = self.collections.read();
+
+        let mut collection_id = 0;
+        let collections = entries
+            .iter()
+            .filter_map(|x| match x {
+                BindableResourceId::TextureCollection(id) => {
+                    let collection = collections[id]
+                        .iter()
+                        .map(|&x| resources[&x.into()].expect_texture_view())
+                        .collect::<Vec<_>>();
+                    Some(collection)
+                }
+                _ => None,
+            })
+            .collect::<Vec<_>>();
 
         let entries = &entries
             .iter()
             .enumerate()
             .map(|(binding, id)| BindGroupEntry {
                 binding: binding as u32,
-                resource: resources[id].as_binding(),
+                resource: match id {
+                    BindableResourceId::TextureCollection(_) => {
+                        collection_id += 1;
+                        BindingResource::TextureViewArray(&collections[collection_id - 1])
+                    }
+                    x => match &resources[x] {
+                        BindableResource::Buffer(buffer) => buffer.as_entire_binding(),
+                        BindableResource::Texture(texture_view) => {
+                            BindingResource::TextureView(texture_view)
+                        }
+                        BindableResource::AccelerationStructure(tlas_package) => {
+                            tlas_package.as_binding()
+                        }
+                    },
+                },
             })
             .collect::<Vec<_>>();
 
@@ -66,9 +104,7 @@ impl BindingManager {
     pub(crate) fn remove_pipeline(&self, id: PipelineId) {
         self.pipelines.write().remove(&id);
     }
-}
 
-impl BindingManager {
     pub(crate) fn add_resource(
         &self,
         id: impl Into<BindableResourceId>,
@@ -86,6 +122,21 @@ impl BindingManager {
 
     pub(crate) fn remove_resource(&self, id: impl Into<BindableResourceId>) {
         self.resources.write().remove(&id.into());
+    }
+
+    pub(crate) fn add_collection(&self, id: TextureCollectionId, resources: Vec<TextureId>) {
+        self.collections.write().insert(id, resources);
+    }
+
+    pub(crate) fn get_collection(
+        &self,
+        id: TextureCollectionId,
+    ) -> MappedRwLockReadGuard<Vec<TextureId>> {
+        RwLockReadGuard::map(self.collections.read(), |x| &x[&id])
+    }
+
+    pub(crate) fn renove_collection(&self, id: TextureCollectionId) {
+        self.collections.write().remove(&id);
     }
 }
 

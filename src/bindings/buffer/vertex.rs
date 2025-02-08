@@ -35,7 +35,10 @@ impl<T> VertexBuffer<T> {
         let mut storage = StorageBuffer::new(&mut buffer);
         storage.write(&data)?;
 
-        self.gpu.queue.write_buffer(&self.get(), 0, &buffer);
+        let this = self.get();
+        assert_eq!(this.size() as usize, buffer.len());
+
+        self.gpu.queue.write_buffer(&this, 0, &buffer);
         Ok(())
     }
 }

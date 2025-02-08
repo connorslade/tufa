@@ -114,7 +114,7 @@ impl<'a> RenderPipelineBuilder<'a> {
             binding,
             visibility,
             ty: entry.binding_type(),
-            count: None,
+            count: entry.count(),
         });
 
         self

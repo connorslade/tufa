@@ -1,4 +1,6 @@
-use wgpu::{BindingResource, BindingType, Buffer, TextureView, TlasPackage};
+use std::num::NonZeroU32;
+
+use wgpu::{BindingType, Buffer, TextureView, TlasPackage};
 
 use crate::misc::ids::{AccelerationStructureId, BufferId, TextureCollectionId, TextureId};
 
@@ -19,6 +21,9 @@ pub use texture::Texture;
 pub trait Bindable {
     fn resource_id(&self) -> BindableResourceId;
     fn binding_type(&self) -> BindingType;
+    fn count(&self) -> Option<NonZeroU32> {
+        None
+    }
 }
 
 #[derive(Clone, Copy, PartialEq, Eq, Hash)]
@@ -34,16 +39,6 @@ pub enum BindableResource {
     Buffer(Buffer),
     Texture(TextureView),
     AccelerationStructure(TlasPackage),
-}
-
-impl BindableResource {
-    pub fn as_binding(&self) -> BindingResource {
-        match self {
-            BindableResource::Buffer(buffer) => buffer.as_entire_binding(),
-            BindableResource::Texture(texture_view) => BindingResource::TextureView(texture_view),
-            BindableResource::AccelerationStructure(tlas_package) => tlas_package.as_binding(),
-        }
-    }
 }
 
 impl BindableResource {
