@@ -106,7 +106,7 @@ impl RenderPipeline {
 }
 
 impl<'a> RenderPipelineBuilder<'a> {
-    pub fn bind_buffer(mut self, entry: &impl Bindable, visibility: ShaderStages) -> Self {
+    pub fn bind(mut self, entry: &impl Bindable, visibility: ShaderStages) -> Self {
         let binding = self.bind_group.len() as u32;
 
         self.bind_group.push(entry.resource_id());

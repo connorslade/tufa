@@ -102,7 +102,7 @@ impl ComputePipeline {
 
 impl ComputePipelineBuilder {
     /// Adds the supplied buffer as the next entry in the bind group, starting with binding zero and counting up.
-    pub fn bind_buffer(mut self, entry: &impl Bindable) -> Self {
+    pub fn bind(mut self, entry: &impl Bindable) -> Self {
         self.entries.push(entry.resource_id());
         self
     }

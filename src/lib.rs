@@ -13,4 +13,4 @@ pub mod export {
     pub use {encase, nalgebra, wgpu};
 }
 
-const TEXTURE_FORMAT: TextureFormat = TextureFormat::Bgra8Unorm;
+const TEXTURE_FORMAT: TextureFormat = TextureFormat::Rgba8Unorm;

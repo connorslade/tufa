@@ -14,7 +14,7 @@ pub struct TextureCollection {
 }
 
 impl Gpu {
-    pub fn create_texture_collection(&self, textures: &[&Texture]) -> TextureCollection {
+    pub fn create_texture_collection(&self, textures: &[Texture]) -> TextureCollection {
         let id = TextureCollectionId::new();
 
         self.binding_manager

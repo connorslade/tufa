@@ -5,7 +5,7 @@ use crate::bindings::BindableResourceId;
 macro_rules! id_types {
     {$($name:ident),*} => {
        $(
-            #[derive(PartialEq, Eq, Hash, Copy, Clone)]
+            #[derive(Debug, PartialEq, Eq, Hash, Copy, Clone)]
             pub struct $name(u64);
 
             impl $name {
@@ -33,6 +33,7 @@ macro_rules! into_bindable_resource {
 id_types! {
     BufferId,
     TextureId,
+    SamplerId,
     PipelineId,
     AccelerationStructureId,
 
@@ -42,5 +43,6 @@ id_types! {
 into_bindable_resource! {
     BufferId => Buffer,
     TextureId => Texture,
+    SamplerId => Sampler,
     AccelerationStructureId => AccelerationStructure
 }

@@ -1,13 +1,16 @@
 use std::num::NonZeroU32;
 
-use wgpu::{BindingType, Buffer, TextureView, TlasPackage};
+use wgpu::{BindingType, Buffer, Sampler, TextureView, TlasPackage};
 
-use crate::misc::ids::{AccelerationStructureId, BufferId, TextureCollectionId, TextureId};
+use crate::misc::ids::{
+    AccelerationStructureId, BufferId, SamplerId, TextureCollectionId, TextureId,
+};
 
 pub mod acceleration_structure;
 mod buffer;
 mod collection;
 pub mod manager;
+mod sampler;
 mod texture;
 
 pub use buffer::blas::BlasBuffer;
@@ -15,6 +18,7 @@ pub use buffer::index::IndexBuffer;
 pub use buffer::storage::StorageBuffer;
 pub use buffer::uniform::UniformBuffer;
 pub use buffer::vertex::VertexBuffer;
+pub use collection::texture_collection::TextureCollection;
 pub use texture::Texture;
 
 /// A resource that can be bound to a shader
@@ -26,10 +30,11 @@ pub trait Bindable {
     }
 }
 
-#[derive(Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum BindableResourceId {
     Buffer(BufferId),
     Texture(TextureId),
+    Sampler(SamplerId),
     AccelerationStructure(AccelerationStructureId),
 
     TextureCollection(TextureCollectionId),
@@ -38,6 +43,7 @@ pub enum BindableResourceId {
 pub enum BindableResource {
     Buffer(Buffer),
     Texture(TextureView),
+    Sampler(Sampler),
     AccelerationStructure(TlasPackage),
 }
 
@@ -73,6 +79,12 @@ impl From<Buffer> for BindableResource {
 impl From<TextureView> for BindableResource {
     fn from(val: TextureView) -> Self {
         BindableResource::Texture(val)
+    }
+}
+
+impl From<Sampler> for BindableResource {
+    fn from(val: Sampler) -> Self {
+        BindableResource::Sampler(val)
     }
 }
 

@@ -69,13 +69,15 @@ impl BindingManager {
                 resource: match id {
                     BindableResourceId::TextureCollection(_) => {
                         collection_id += 1;
-                        BindingResource::TextureViewArray(&collections[collection_id - 1])
+                        // BindingResource::TextureViewArray(&)
+                        BindingResource::TextureView(&collections[collection_id - 1][0])
                     }
                     x => match &resources[x] {
                         BindableResource::Buffer(buffer) => buffer.as_entire_binding(),
                         BindableResource::Texture(texture_view) => {
                             BindingResource::TextureView(texture_view)
                         }
+                        BindableResource::Sampler(sampler) => BindingResource::Sampler(sampler),
                         BindableResource::AccelerationStructure(tlas_package) => {
                             tlas_package.as_binding()
                         }
