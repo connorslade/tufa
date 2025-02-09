@@ -1,8 +1,7 @@
 use nalgebra::Vector2;
 use wgpu::{
-    BindingType, Extent3d, ImageDataLayout, TexelCopyBufferLayout, TextureDescriptor,
-    TextureDimension, TextureSampleType, TextureUsages, TextureViewDescriptor,
-    TextureViewDimension,
+    BindingType, Extent3d, TexelCopyBufferLayout, TextureDescriptor, TextureDimension,
+    TextureSampleType, TextureUsages, TextureViewDescriptor, TextureViewDimension,
 };
 
 use crate::{gpu::Gpu, misc::ids::TextureId, TEXTURE_FORMAT};

@@ -1,7 +1,8 @@
 use nalgebra::Vector3;
 use wgpu::{
-    BindGroup, ComputePassDescriptor, ComputePipelineDescriptor, PipelineCompilationOptions,
-    ShaderModuleDescriptor,
+    BindGroup, BindGroupLayoutDescriptor, BindGroupLayoutEntry, ComputePassDescriptor,
+    ComputePipelineDescriptor, PipelineCompilationOptions, PipelineLayoutDescriptor, ShaderModule,
+    ShaderModuleDescriptor, ShaderStages,
 };
 
 use crate::{
@@ -24,7 +25,8 @@ pub struct ComputePipeline {
 pub struct ComputePipelineBuilder {
     gpu: Gpu,
 
-    pipeline: wgpu::ComputePipeline,
+    module: ShaderModule,
+    bind_group_layout: Vec<BindGroupLayoutEntry>,
     entries: Vec<BindableResourceId>,
 }
 
@@ -104,11 +106,40 @@ impl ComputePipelineBuilder {
     /// Adds the supplied buffer as the next entry in the bind group, starting with binding zero and counting up.
     pub fn bind(mut self, entry: &impl Bindable) -> Self {
         self.entries.push(entry.resource_id());
+        self.bind_group_layout.push(BindGroupLayoutEntry {
+            binding: self.bind_group_layout.len() as u32,
+            visibility: ShaderStages::COMPUTE,
+            ty: entry.binding_type(),
+            count: entry.count(),
+        });
+
         self
     }
 
     /// Converts the pipeline builder into an actual compte pipeline
     pub fn finish(self) -> ComputePipeline {
+        let device = &self.gpu.device;
+        let bind_group_layout = device.create_bind_group_layout(&BindGroupLayoutDescriptor {
+            label: None,
+            entries: &self.bind_group_layout,
+        });
+
+        let layout = device.create_pipeline_layout(&PipelineLayoutDescriptor {
+            label: None,
+            bind_group_layouts: &[&bind_group_layout],
+            push_constant_ranges: &[],
+        });
+
+        let pipeline = device.create_compute_pipeline(&ComputePipelineDescriptor {
+            label: None,
+            layout: Some(&layout),
+            module: &self.module,
+            entry_point: Some("main"),
+            // todo: pass in constants?
+            compilation_options: PipelineCompilationOptions::default(),
+            cache: None,
+        });
+
         let id = PipelineId::new();
         self.gpu.binding_manager.add_pipeline(
             id,
@@ -122,12 +153,12 @@ impl ComputePipelineBuilder {
             id,
             bind_group: self.gpu.binding_manager.create_bind_group(
                 &self.gpu.device,
-                &self.pipeline.get_bind_group_layout(0),
+                &pipeline.get_bind_group_layout(0),
                 &self.entries,
             ),
             gpu: self.gpu,
-            pipeline: self.pipeline,
             entries: self.entries,
+            pipeline,
         }
     }
 }
@@ -138,21 +169,11 @@ impl Gpu {
     pub fn compute_pipeline(&self, source: ShaderModuleDescriptor) -> ComputePipelineBuilder {
         let module = self.device.create_shader_module(source);
 
-        let pipeline = self
-            .device
-            .create_compute_pipeline(&ComputePipelineDescriptor {
-                label: None,
-                layout: None,
-                module: &module,
-                entry_point: Some("main"),
-                // todo: pass in constants?
-                compilation_options: PipelineCompilationOptions::default(),
-                cache: None,
-            });
-
         ComputePipelineBuilder {
             gpu: self.clone(),
-            pipeline,
+
+            module,
+            bind_group_layout: Vec::new(),
             entries: Vec::new(),
         }
     }
