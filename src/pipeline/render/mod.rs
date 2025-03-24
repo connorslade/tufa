@@ -42,11 +42,12 @@ pub struct RenderPipeline {
     bind_group: BindGroup,
 }
 
-pub struct RenderPipelineBuilder<'a> {
+pub struct RenderPipelineBuilder {
     gpu: Gpu,
 
     module: ShaderModule,
-    vertex_layout: Option<VertexBufferLayout<'a>>,
+    vertex_layout: VertexBufferLayout<'static>,
+    instance_layout: Option<VertexBufferLayout<'static>>,
     bind_group_layout: Vec<BindGroupLayoutEntry>,
     bind_group: Vec<BindableResourceId>,
 
@@ -64,11 +65,11 @@ impl RenderPipeline {
         }
     }
 
-    pub fn draw(
+    pub fn draw<T>(
         &mut self,
         render_pass: &mut RenderPass,
         index: &IndexBuffer,
-        vertex: &VertexBuffer<Vertex>,
+        vertex: &VertexBuffer<T>,
         indices: Range<u32>,
     ) {
         self.recreate_bind_group();
@@ -108,7 +109,7 @@ impl RenderPipeline {
     }
 }
 
-impl<'a> RenderPipelineBuilder<'a> {
+impl RenderPipelineBuilder {
     pub fn bind(mut self, entry: &impl Bindable, visibility: ShaderStages) -> Self {
         let binding = self.bind_group.len() as u32;
 
@@ -123,8 +124,13 @@ impl<'a> RenderPipelineBuilder<'a> {
         self
     }
 
-    pub fn instance_layout(mut self, layout: VertexBufferLayout<'a>) -> Self {
-        self.vertex_layout = Some(layout);
+    pub fn vertex_layout(mut self, layout: VertexBufferLayout<'static>) -> Self {
+        self.vertex_layout = layout;
+        self
+    }
+
+    pub fn instance_layout(mut self, layout: VertexBufferLayout<'static>) -> Self {
+        self.instance_layout = Some(layout);
         self
     }
 
@@ -147,8 +153,8 @@ impl<'a> RenderPipelineBuilder<'a> {
             push_constant_ranges: &[],
         });
 
-        let mut vertex_buffers = vec![VERTEX_BUFFER_LAYOUT];
-        if let Some(layout) = self.vertex_layout {
+        let mut vertex_buffers = vec![self.vertex_layout];
+        if let Some(layout) = self.instance_layout {
             vertex_buffers.push(layout);
         }
 
@@ -219,7 +225,8 @@ impl Gpu {
         RenderPipelineBuilder {
             gpu: self.clone(),
             module,
-            vertex_layout: None,
+            vertex_layout: VERTEX_BUFFER_LAYOUT,
+            instance_layout: None,
             bind_group_layout: Vec::new(),
             bind_group: Vec::new(),
 
