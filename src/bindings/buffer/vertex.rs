@@ -36,7 +36,7 @@ impl<T> VertexBuffer<T> {
         storage.write(&data)?;
 
         let this = self.get();
-        assert_eq!(this.size() as usize, buffer.len());
+        assert!(this.size() as usize >= buffer.len());
 
         self.gpu.queue.write_buffer(&this, 0, &buffer);
         Ok(())

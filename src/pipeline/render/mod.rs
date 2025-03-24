@@ -49,6 +49,8 @@ pub struct RenderPipelineBuilder<'a> {
     vertex_layout: Option<VertexBufferLayout<'a>>,
     bind_group_layout: Vec<BindGroupLayoutEntry>,
     bind_group: Vec<BindableResourceId>,
+
+    depth_compare: CompareFunction,
 }
 
 impl RenderPipeline {
@@ -126,6 +128,11 @@ impl<'a> RenderPipelineBuilder<'a> {
         self
     }
 
+    pub fn depth_compare(mut self, compare: CompareFunction) -> Self {
+        self.depth_compare = compare;
+        self
+    }
+
     pub fn finish(self) -> RenderPipeline {
         let device = &self.gpu.device;
 
@@ -171,7 +178,7 @@ impl<'a> RenderPipelineBuilder<'a> {
             depth_stencil: Some(DepthStencilState {
                 format: DEPTH_TEXTURE_FORMAT,
                 depth_write_enabled: true,
-                depth_compare: CompareFunction::Less,
+                depth_compare: self.depth_compare,
                 stencil: StencilState::default(),
                 bias: DepthBiasState::default(),
             }),
@@ -215,6 +222,8 @@ impl Gpu {
             vertex_layout: None,
             bind_group_layout: Vec::new(),
             bind_group: Vec::new(),
+
+            depth_compare: CompareFunction::LessEqual,
         }
     }
 }
