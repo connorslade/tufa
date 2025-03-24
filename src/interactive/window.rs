@@ -4,8 +4,8 @@ use anyhow::Result;
 use egui_wgpu::ScreenDescriptor;
 use wgpu::{
     Color, CompositeAlphaMode, LoadOp, Operations, PresentMode, RenderPassColorAttachment,
-    RenderPassDescriptor, StoreOp, Surface, SurfaceConfiguration, TextureUsages,
-    TextureViewDescriptor,
+    RenderPassDepthStencilAttachment, RenderPassDescriptor, StoreOp, Surface, SurfaceConfiguration,
+    Texture, TextureDescriptor, TextureDimension, TextureUsages, TextureViewDescriptor,
 };
 use winit::{
     application::ApplicationHandler,
@@ -14,7 +14,7 @@ use winit::{
     window::{WindowAttributes, WindowId},
 };
 
-use crate::{gpu::Gpu, TEXTURE_FORMAT};
+use crate::{gpu::Gpu, DEPTH_TEXTURE_FORMAT, TEXTURE_FORMAT};
 
 use super::{egui::Egui, GraphicsCtx, Interactive};
 
@@ -33,6 +33,7 @@ struct Application<'a, T> {
 struct InnerApplication<'a> {
     window: Arc<winit::window::Window>,
     surface: Surface<'a>,
+    depth_texture: Texture,
     egui: Egui,
 }
 
@@ -51,6 +52,22 @@ impl<T: Interactive> ApplicationHandler for Application<'_, T> {
         let surface = self.gpu.instance.create_surface(window.clone()).unwrap();
         let egui = Egui::new(&self.gpu.device, TEXTURE_FORMAT, None, 1, &window);
 
+        let window_size = window.inner_size();
+        let depth_texture = self.gpu.device.create_texture(&TextureDescriptor {
+            label: None,
+            size: wgpu::Extent3d {
+                width: window_size.width,
+                height: window_size.height,
+                depth_or_array_layers: 1,
+            },
+            mip_level_count: 1,
+            sample_count: 1,
+            dimension: TextureDimension::D2,
+            format: DEPTH_TEXTURE_FORMAT,
+            usage: TextureUsages::RENDER_ATTACHMENT,
+            view_formats: &[],
+        });
+
         let gcx = GraphicsCtx {
             gpu: &self.gpu,
             window: &window,
@@ -60,6 +77,7 @@ impl<T: Interactive> ApplicationHandler for Application<'_, T> {
         self.state = Some(InnerApplication {
             window,
             surface,
+            depth_texture,
             egui,
         });
     }
@@ -90,6 +108,9 @@ impl<T: Interactive> ApplicationHandler for Application<'_, T> {
                     let view = output
                         .texture
                         .create_view(&TextureViewDescriptor::default());
+                    let depth_view = state
+                        .depth_texture
+                        .create_view(&TextureViewDescriptor::default());
 
                     {
                         let mut render_pass = encoder.begin_render_pass(&RenderPassDescriptor {
@@ -102,7 +123,14 @@ impl<T: Interactive> ApplicationHandler for Application<'_, T> {
                                     store: StoreOp::Store,
                                 },
                             })],
-                            depth_stencil_attachment: None,
+                            depth_stencil_attachment: Some(RenderPassDepthStencilAttachment {
+                                view: &depth_view,
+                                depth_ops: Some(Operations {
+                                    load: LoadOp::Clear(1.0),
+                                    store: StoreOp::Store,
+                                }),
+                                stencil_ops: None,
+                            }),
                             timestamp_writes: None,
                             occlusion_query_set: None,
                         });
@@ -153,6 +181,20 @@ impl<T> Application<'_, T> {
                 view_formats: vec![],
             },
         );
+        state.depth_texture = self.gpu.device.create_texture(&TextureDescriptor {
+            label: None,
+            size: wgpu::Extent3d {
+                width: size.width,
+                height: size.height,
+                depth_or_array_layers: 1,
+            },
+            mip_level_count: 1,
+            sample_count: 1,
+            dimension: TextureDimension::D2,
+            format: DEPTH_TEXTURE_FORMAT,
+            usage: TextureUsages::RENDER_ATTACHMENT,
+            view_formats: &[],
+        });
     }
 }
 

@@ -1,8 +1,8 @@
 # `compute`
 
 A wgpu abstraction layer.
-Was orgianly just for compute shaders, but now has support for basic rendering that often comes up when making simulations where often need an egui interface and a quad rendered on the screen
-Also it has support for Ray Tracing acceleration structures.
+Was originally just for compute shaders, but now has support for basic rendering that often comes up when making simulations, like egui UIs and quad rendering.
+Also, it has support for ray-tracing acceleration structures.
 
 See [connorslade/ray-tracing](https://github.com/connorslade/ray-tracing), [examples/mandelbrot-interactive](https://github.com/connorslade/compute/tree/main/examples/mandelbrot-interactive), and [connorslade/physics](https://github.com/connorslade/physics) for some neat examples.
 

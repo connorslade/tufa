@@ -14,3 +14,4 @@ pub mod export {
 }
 
 const TEXTURE_FORMAT: TextureFormat = TextureFormat::Rgba8Unorm;
+const DEPTH_TEXTURE_FORMAT: TextureFormat = TextureFormat::Depth24PlusStencil8;

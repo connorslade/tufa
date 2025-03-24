@@ -5,16 +5,17 @@ use encase::ShaderType;
 use nalgebra::{Vector2, Vector4};
 use wgpu::{
     BindGroup, BindGroupLayoutDescriptor, BindGroupLayoutEntry, BlendComponent, BlendState,
-    ColorTargetState, ColorWrites, FragmentState, IndexFormat, MultisampleState,
-    PipelineCompilationOptions, PipelineLayoutDescriptor, PrimitiveState, RenderPass, ShaderModule,
-    ShaderModuleDescriptor, ShaderStages, VertexBufferLayout, VertexState,
+    ColorTargetState, ColorWrites, CompareFunction, DepthBiasState, DepthStencilState,
+    FragmentState, IndexFormat, MultisampleState, PipelineCompilationOptions,
+    PipelineLayoutDescriptor, PrimitiveState, RenderPass, ShaderModule, ShaderModuleDescriptor,
+    ShaderStages, StencilState, VertexBufferLayout, VertexState,
 };
 
 use crate::{
     bindings::{Bindable, BindableResourceId, IndexBuffer, VertexBuffer},
     gpu::Gpu,
     misc::ids::PipelineId,
-    TEXTURE_FORMAT,
+    DEPTH_TEXTURE_FORMAT, TEXTURE_FORMAT,
 };
 
 use super::PipelineStatus;
@@ -167,7 +168,13 @@ impl<'a> RenderPipelineBuilder<'a> {
                 compilation_options: PipelineCompilationOptions::default(),
             }),
             primitive: PrimitiveState::default(),
-            depth_stencil: None,
+            depth_stencil: Some(DepthStencilState {
+                format: DEPTH_TEXTURE_FORMAT,
+                depth_write_enabled: true,
+                depth_compare: CompareFunction::Less,
+                stencil: StencilState::default(),
+                bias: DepthBiasState::default(),
+            }),
             multisample: MultisampleState::default(),
             multiview: None,
             cache: None,
