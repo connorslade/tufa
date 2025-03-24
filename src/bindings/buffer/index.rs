@@ -25,13 +25,29 @@ impl IndexBuffer {
 
     pub fn upload(&self, data: &[u32]) -> Result<()> {
         let buffer = bytemuck::cast_slice(data);
-        self.gpu.queue.write_buffer(&self.get(), 0, buffer);
+
+        let this = self.get();
+        if buffer.len() as u64 > this.size() {
+            drop(this);
+            let replacement = self.gpu.device.create_buffer_init(&BufferInitDescriptor {
+                label: None,
+                contents: buffer,
+                usage: BufferUsages::COPY_DST | BufferUsages::INDEX,
+            });
+
+            let binding_manager = &self.gpu.binding_manager;
+            binding_manager.add_resource(self.buffer, replacement);
+            binding_manager.mark_resource_dirty(&BindableResourceId::Buffer(self.buffer));
+        } else {
+            self.gpu.queue.write_buffer(&this, 0, buffer);
+        }
+
         Ok(())
     }
 }
 
 impl Gpu {
-    pub fn create_index(&self, data: &[u32]) -> Result<IndexBuffer> {
+    pub fn create_index(&self, data: &[u32]) -> IndexBuffer {
         let id = BufferId::new();
         let buffer = self.device.create_buffer_init(&BufferInitDescriptor {
             label: None,
@@ -40,10 +56,26 @@ impl Gpu {
         });
 
         self.binding_manager.add_resource(id, buffer);
-        Ok(IndexBuffer {
+        IndexBuffer {
             gpu: self.clone(),
             buffer: id,
-        })
+        }
+    }
+
+    pub fn create_index_empty(&self, size: usize) -> IndexBuffer {
+        let id = BufferId::new();
+        let buffer = self.device.create_buffer(&wgpu::BufferDescriptor {
+            label: None,
+            size: (size * std::mem::size_of::<u32>()) as u64,
+            usage: BufferUsages::COPY_DST | BufferUsages::INDEX,
+            mapped_at_creation: false,
+        });
+
+        self.binding_manager.add_resource(id, buffer);
+        IndexBuffer {
+            gpu: self.clone(),
+            buffer: id,
+        }
     }
 }
 

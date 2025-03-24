@@ -36,9 +36,20 @@ impl<T> VertexBuffer<T> {
         storage.write(&data)?;
 
         let this = self.get();
-        assert!(this.size() as usize >= buffer.len());
+        if buffer.len() as u64 > this.size() {
+            drop(this);
+            let replacement = self.gpu.device.create_buffer_init(&BufferInitDescriptor {
+                label: None,
+                contents: &buffer,
+                usage: BufferUsages::COPY_DST | BufferUsages::VERTEX,
+            });
 
-        self.gpu.queue.write_buffer(&this, 0, &buffer);
+            let binding_manager = &self.gpu.binding_manager;
+            binding_manager.add_resource(self.buffer, replacement);
+            binding_manager.mark_resource_dirty(&BindableResourceId::Buffer(self.buffer));
+        } else {
+            self.gpu.queue.write_buffer(&this, 0, &buffer);
+        }
         Ok(())
     }
 }
@@ -57,6 +68,26 @@ impl Gpu {
             label: None,
             usage: BufferUsages::COPY_DST | BufferUsages::VERTEX,
             contents: &buffer,
+        });
+
+        self.binding_manager.add_resource(id, buffer);
+        Ok(VertexBuffer {
+            gpu: self.clone(),
+            buffer: id,
+            _type: PhantomData,
+        })
+    }
+
+    pub fn create_vertex_empty<T>(&self, size: usize) -> Result<VertexBuffer<T>>
+    where
+        T: ShaderType + ShaderSize + WriteInto,
+    {
+        let id = BufferId::new();
+        let buffer = self.device.create_buffer(&wgpu::BufferDescriptor {
+            label: None,
+            size: (std::mem::size_of::<T>() * size) as u64,
+            usage: BufferUsages::COPY_DST | BufferUsages::VERTEX,
+            mapped_at_creation: false,
         });
 
         self.binding_manager.add_resource(id, buffer);

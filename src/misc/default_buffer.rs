@@ -24,7 +24,7 @@ impl DefaultBuffers {
         self.buffers.get_or_init(|| {
             (
                 gpu.create_vertex(QUAD_VERTEX).unwrap(),
-                gpu.create_index(QUAD_INDEX).unwrap(),
+                gpu.create_index(QUAD_INDEX),
             )
         })
     }
