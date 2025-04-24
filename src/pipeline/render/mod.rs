@@ -7,8 +7,8 @@ use wgpu::{
     BindGroup, BindGroupLayoutDescriptor, BindGroupLayoutEntry, BlendComponent, BlendState,
     ColorTargetState, ColorWrites, CompareFunction, DepthBiasState, DepthStencilState,
     FragmentState, IndexFormat, MultisampleState, PipelineCompilationOptions,
-    PipelineLayoutDescriptor, PrimitiveState, RenderPass, ShaderModule, ShaderModuleDescriptor,
-    ShaderStages, StencilState, VertexBufferLayout, VertexState,
+    PipelineLayoutDescriptor, PrimitiveState, PrimitiveTopology, RenderPass, ShaderModule,
+    ShaderModuleDescriptor, ShaderStages, StencilState, VertexBufferLayout, VertexState,
 };
 
 use crate::{
@@ -51,6 +51,7 @@ pub struct RenderPipelineBuilder {
     bind_group_layout: Vec<BindGroupLayoutEntry>,
     bind_group: Vec<BindableResourceId>,
 
+    topology: PrimitiveTopology,
     depth_compare: CompareFunction,
 }
 
@@ -139,6 +140,11 @@ impl RenderPipelineBuilder {
         self
     }
 
+    pub fn topology(mut self, topology: PrimitiveTopology) -> Self {
+        self.topology = topology;
+        self
+    }
+
     pub fn finish(self) -> RenderPipeline {
         let device = &self.gpu.device;
 
@@ -180,7 +186,10 @@ impl RenderPipelineBuilder {
                 })],
                 compilation_options: PipelineCompilationOptions::default(),
             }),
-            primitive: PrimitiveState::default(),
+            primitive: PrimitiveState {
+                topology: self.topology,
+                ..PrimitiveState::default()
+            },
             depth_stencil: Some(DepthStencilState {
                 format: DEPTH_TEXTURE_FORMAT,
                 depth_write_enabled: true,
@@ -230,6 +239,7 @@ impl Gpu {
             bind_group_layout: Vec::new(),
             bind_group: Vec::new(),
 
+            topology: PrimitiveTopology::TriangleList,
             depth_compare: CompareFunction::LessEqual,
         }
     }

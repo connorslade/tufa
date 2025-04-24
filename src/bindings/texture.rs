@@ -1,4 +1,4 @@
-use nalgebra::Vector2;
+use nalgebra::{Vector2, Vector3};
 use wgpu::{
     BindingType, Extent3d, TexelCopyBufferLayout, TextureDescriptor, TextureDimension,
     TextureSampleType, TextureUsages, TextureViewDescriptor, TextureViewDimension,
@@ -13,22 +13,28 @@ pub struct Texture {
 
     pub(crate) id: TextureId,
     texture: wgpu::Texture,
+    size: Vector3<u32>,
 }
 
 impl Texture {
-    pub fn upload(&self, size: Vector2<u32>, data: &[u8]) {
+    pub fn upload(&self, data: &[u8]) {
+        assert_eq!(
+            data.len(),
+            self.size.iter().copied().product::<u32>() as usize
+        );
+
         self.gpu.queue.write_texture(
             self.texture.as_image_copy(),
             data,
             TexelCopyBufferLayout {
                 offset: 0,
-                bytes_per_row: Some(size.x * 4),
-                rows_per_image: None,
+                bytes_per_row: Some(self.size.x * 4),
+                rows_per_image: Some(self.size.y),
             },
             Extent3d {
-                width: size.x,
-                height: size.y,
-                depth_or_array_layers: 1,
+                width: self.size.x,
+                height: self.size.y,
+                depth_or_array_layers: self.size.z,
             },
         );
     }
@@ -59,6 +65,7 @@ impl Gpu {
             gpu: self.clone(),
             id,
             texture,
+            size: Vector3::new(size.x, size.y, 1),
         }
     }
 }
@@ -71,7 +78,11 @@ impl Bindable for Texture {
     fn binding_type(&self) -> BindingType {
         BindingType::Texture {
             sample_type: TextureSampleType::Float { filterable: true },
-            view_dimension: TextureViewDimension::D2,
+            view_dimension: if self.size.z > 1 {
+                TextureViewDimension::D3
+            } else {
+                TextureViewDimension::D2
+            },
             multisampled: false,
         }
     }
