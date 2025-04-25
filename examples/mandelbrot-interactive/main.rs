@@ -92,7 +92,7 @@ fn main() -> Result<()> {
     let uniform = gpu.create_uniform(&Uniform::default()).unwrap();
     let render = gpu
         .render_pipeline(include_wgsl!("render.wgsl"))
-        .bind_buffer(&uniform, ShaderStages::FRAGMENT)
+        .bind(&uniform, ShaderStages::FRAGMENT)
         .finish();
 
     gpu.create_window(

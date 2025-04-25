@@ -29,7 +29,7 @@ fn main() -> Result<()> {
 
     let mut pipeline = gpu
         .compute_pipeline(include_wgsl!("shader.wgsl"))
-        .bind_buffer(&uniform)
+        .bind(&uniform)
         .bind_buffer(&buffer)
         .finish();
 

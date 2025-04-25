@@ -33,13 +33,13 @@ fn main() -> Result<()> {
 
     let render = gpu
         .render_pipeline(include_wgsl!("render.wgsl"))
-        .bind_buffer(&dots, ShaderStages::VERTEX_FRAGMENT)
-        .bind_buffer(&uniform, ShaderStages::VERTEX_FRAGMENT)
+        .bind(&dots, ShaderStages::VERTEX_FRAGMENT)
+        .bind(&uniform, ShaderStages::VERTEX_FRAGMENT)
         .finish();
     let compute = gpu
         .compute_pipeline(include_wgsl!("compute.wgsl"))
-        .bind_buffer(&dots)
-        .bind_buffer(&uniform)
+        .bind(&dots)
+        .bind(&uniform)
         .finish();
 
     gpu.create_window(

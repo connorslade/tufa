@@ -20,7 +20,7 @@ fn main() -> Result<()> {
 
     let mut pipeline = gpu
         .compute_pipeline(include_wgsl!("compute.wgsl"))
-        .bind_buffer(&buffer)
+        .bind(&buffer)
         .finish();
 
     let now = Instant::now();
