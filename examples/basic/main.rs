@@ -2,7 +2,7 @@ use std::time::Instant;
 
 use anyhow::Result;
 
-use compute::{
+use tufa::{
     export::{encase::ShaderType, nalgebra::Vector3, wgpu::include_wgsl},
     gpu::Gpu,
 };

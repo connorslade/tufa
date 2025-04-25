@@ -1,6 +1,6 @@
 use anyhow::Result;
 
-use compute::{
+use tufa::{
     bindings::UniformBuffer,
     export::{
         egui::{self, Context, DragValue, Slider},

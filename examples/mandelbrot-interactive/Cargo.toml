@@ -8,7 +8,7 @@ name = "mandelbrot-interactive"
 path = "main.rs"
 
 [dependencies]
-compute = { path = "../..", features = ["interactive"] }
+tufa = { path = "../..", features = ["interactive"] }
 
 anyhow = "1.0.95"
 encase = { version = "0.10.0", features = ["nalgebra"] }

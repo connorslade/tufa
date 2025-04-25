@@ -1,6 +1,7 @@
 use anyhow::Result;
 
-use compute::{
+use image::{ImageBuffer, Rgb};
+use tufa::{
     export::{
         encase::ShaderType,
         nalgebra::{Vector2, Vector3},
@@ -8,7 +9,6 @@ use compute::{
     },
     gpu::Gpu,
 };
-use image::{ImageBuffer, Rgb};
 
 #[derive(ShaderType)]
 struct Uniform {
@@ -30,7 +30,7 @@ fn main() -> Result<()> {
     let mut pipeline = gpu
         .compute_pipeline(include_wgsl!("shader.wgsl"))
         .bind(&uniform)
-        .bind_buffer(&buffer)
+        .bind(&buffer)
         .finish();
 
     for zoom in 0..10_0 {

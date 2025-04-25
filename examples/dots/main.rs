@@ -1,7 +1,9 @@
 use std::{ops::RangeInclusive, time::Instant};
 
 use anyhow::{Ok, Result};
-use compute::{
+use encase::ShaderType;
+use rand::{thread_rng, Rng};
+use tufa::{
     bindings::{StorageBuffer, UniformBuffer},
     export::{
         egui::{emath::Numeric, Context, Slider, Ui, Window},
@@ -14,8 +16,6 @@ use compute::{
     misc::mutability::Mutable,
     pipeline::{compute::ComputePipeline, render::RenderPipeline},
 };
-use encase::ShaderType;
-use rand::{thread_rng, Rng};
 
 fn main() -> Result<()> {
     let gpu = Gpu::new()?;

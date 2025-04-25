@@ -8,7 +8,7 @@ name = "buffer-resize"
 path = "main.rs"
 
 [dependencies]
-compute = { path = "../.." }
+tufa = { path = "../.." }
 
 anyhow = "1.0.95"
 encase = "0.10.0"

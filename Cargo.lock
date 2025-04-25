@@ -196,8 +196,8 @@ name = "basic"
 version = "0.1.0"
 dependencies = [
  "anyhow",
- "compute",
  "encase",
+ "tufa",
 ]
 
 [[package]]
@@ -262,8 +262,8 @@ name = "buffer-resize"
 version = "0.1.0"
 dependencies = [
  "anyhow",
- "compute",
  "encase",
+ "tufa",
 ]
 
 [[package]]
@@ -414,24 +414,6 @@ checksum = "ba5a308b75df32fe02788e748662718f03fde005016435c444eea572398219fd"
 dependencies = [
  "bytes",
  "memchr",
-]
-
-[[package]]
-name = "compute"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "bytemuck",
- "crossbeam-channel",
- "egui",
- "egui-wgpu",
- "egui-winit",
- "encase",
- "nalgebra",
- "parking_lot",
- "pollster",
- "wgpu",
- "winit",
 ]
 
 [[package]]
@@ -594,10 +576,10 @@ name = "dots"
 version = "0.1.0"
 dependencies = [
  "anyhow",
- "compute",
  "encase",
  "image",
  "rand",
+ "tufa",
 ]
 
 [[package]]
@@ -1376,9 +1358,9 @@ name = "mandelbrot"
 version = "0.1.0"
 dependencies = [
  "anyhow",
- "compute",
  "encase",
  "image",
+ "tufa",
 ]
 
 [[package]]
@@ -1386,9 +1368,9 @@ name = "mandelbrot-interactive"
 version = "0.1.0"
 dependencies = [
  "anyhow",
- "compute",
  "encase",
  "image",
+ "tufa",
 ]
 
 [[package]]
@@ -2672,6 +2654,24 @@ name = "ttf-parser"
 version = "0.25.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d2df906b07856748fa3f6e0ad0cbaa047052d4a7dd609e231c4f72cee8c36f31"
+
+[[package]]
+name = "tufa"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "bytemuck",
+ "crossbeam-channel",
+ "egui",
+ "egui-wgpu",
+ "egui-winit",
+ "encase",
+ "nalgebra",
+ "parking_lot",
+ "pollster",
+ "wgpu",
+ "winit",
+]
 
 [[package]]
 name = "type-map"
