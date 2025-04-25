@@ -1,4 +1,4 @@
-# `compute`
+# `tufa`
 
 A wgpu abstraction layer.
 Was originally just for compute shaders, but now has support for basic rendering that often comes up when making simulations, like egui UIs and quad rendering.
@@ -96,8 +96,8 @@ fn main() -> Result<()> {
 
     let pipeline = gpu
         .compute_pipeline(include_wgsl!("shader.wgsl"))
-        .bind_buffer(&uniform)
-        .bind_buffer(&buffer)
+        .bind(&uniform)
+        .bind(&buffer)
         .finish();
 
     for zoom in 0..15_00 {

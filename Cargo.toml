@@ -1,7 +1,13 @@
 [package]
-name = "compute"
+name = "tufa"
 version = "0.1.0"
 edition = "2021"
+
+description = "A wgpu abstraction layer."
+categories = ["graphics", "rendering"]
+keywords = ["wgpu", "graphics"]
+repository = "https://github.com/connorslade/tufa"
+license = "MIT"
 
 [dependencies]
 anyhow = "1.0.95"
