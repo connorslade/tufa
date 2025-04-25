@@ -9,7 +9,7 @@ use wgpu::{
 };
 use winit::{
     application::ApplicationHandler,
-    event::WindowEvent,
+    event::{DeviceEvent, DeviceId, WindowEvent},
     event_loop::{ActiveEventLoop, ControlFlow, EventLoopBuilder},
     window::{WindowAttributes, WindowId},
 };
@@ -82,6 +82,23 @@ impl<T: Interactive> ApplicationHandler for Application<'_, T> {
         });
     }
 
+    fn device_event(
+        &mut self,
+        _event_loop: &ActiveEventLoop,
+        device_id: DeviceId,
+        event: DeviceEvent,
+    ) {
+        let Some(state) = &mut self.state else { return };
+        self.interactive.device_event(
+            GraphicsCtx {
+                gpu: &self.gpu,
+                window: &state.window,
+            },
+            device_id,
+            &event,
+        );
+    }
+
     fn window_event(
         &mut self,
         event_loop: &ActiveEventLoop,
@@ -93,16 +110,17 @@ impl<T: Interactive> ApplicationHandler for Application<'_, T> {
             return;
         }
 
+        let gcx = GraphicsCtx {
+            gpu: &self.gpu,
+            window: &state.window,
+        };
+        self.interactive.window_event(gcx.clone(), &event);
         state.egui.handle_input(&state.window, &event);
         match event {
             WindowEvent::CloseRequested => event_loop.exit(),
             WindowEvent::Resized(_size) => self.resize_surface(),
             WindowEvent::RedrawRequested => {
                 let output = state.surface.get_current_texture().unwrap();
-                let gcx = GraphicsCtx {
-                    gpu: &self.gpu,
-                    window: &state.window,
-                };
 
                 self.gpu.immediate_dispatch(|encoder| {
                     let view = output
