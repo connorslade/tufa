@@ -42,6 +42,7 @@ pub struct RenderPipeline {
     bind_group: BindGroup,
 }
 
+#[derive(Clone)]
 pub struct RenderPipelineBuilder {
     gpu: Gpu,
 
