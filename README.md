@@ -1,4 +1,4 @@
-# `tufa`
+# `tufa` [![Crates.io Version](https://img.shields.io/crates/v/tufa)](https://crates.io/crate/tufa) [![docs.rs](https://img.shields.io/docsrs/tufa)](https://docs.rs/tufa)
 
 A wgpu abstraction layer.
 Was originally just for compute shaders, but now has support for basic rendering that often comes up when making simulations, like egui UIs and quad rendering.
