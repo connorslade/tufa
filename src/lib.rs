@@ -1,3 +1,5 @@
+#![doc = include_str!("../README.md")]
+
 use wgpu::TextureFormat;
 
 pub mod bindings;
