@@ -35,4 +35,5 @@ members = [
     "examples/dots",
     "examples/mandelbrot-interactive",
     "examples/mandelbrot",
+    "examples/hello-triangle",
 ]
