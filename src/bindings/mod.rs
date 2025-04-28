@@ -1,6 +1,6 @@
 use std::num::NonZeroU32;
 
-use wgpu::{BindingType, Buffer, Sampler, TextureView, TlasPackage};
+use wgpu::{BindingType, Buffer, Sampler as WSampler, TextureView, TlasPackage};
 
 use crate::misc::ids::{
     AccelerationStructureId, BufferId, SamplerId, TextureCollectionId, TextureId,
@@ -19,6 +19,7 @@ pub use buffer::storage::StorageBuffer;
 pub use buffer::uniform::UniformBuffer;
 pub use buffer::vertex::VertexBuffer;
 pub use collection::texture_collection::TextureCollection;
+pub use sampler::Sampler;
 pub use texture::Texture;
 
 /// A resource that can be bound to a shader
@@ -43,7 +44,7 @@ pub enum BindableResourceId {
 pub enum BindableResource {
     Buffer(Buffer),
     Texture(TextureView),
-    Sampler(Sampler),
+    Sampler(WSampler),
     AccelerationStructure(TlasPackage),
 }
 
@@ -82,8 +83,8 @@ impl From<TextureView> for BindableResource {
     }
 }
 
-impl From<Sampler> for BindableResource {
-    fn from(val: Sampler) -> Self {
+impl From<WSampler> for BindableResource {
+    fn from(val: WSampler) -> Self {
         BindableResource::Sampler(val)
     }
 }

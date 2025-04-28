@@ -11,15 +11,15 @@ pub struct Sampler {
 }
 
 impl Gpu {
-    pub fn create_sampler(&self) -> Sampler {
+    pub fn create_sampler(&self, mode: FilterMode) -> Sampler {
         let sampler = self.device.create_sampler(&SamplerDescriptor {
             label: None,
             address_mode_u: AddressMode::Repeat,
             address_mode_v: AddressMode::Repeat,
             address_mode_w: AddressMode::Repeat,
-            mag_filter: FilterMode::Linear,
-            min_filter: FilterMode::Linear,
-            mipmap_filter: FilterMode::Linear,
+            mag_filter: mode,
+            min_filter: mode,
+            mipmap_filter: mode,
             lod_min_clamp: 0.0,
             lod_max_clamp: 0.0,
             compare: None,

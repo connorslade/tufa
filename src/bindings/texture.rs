@@ -20,7 +20,7 @@ impl Texture {
     pub fn upload(&self, data: &[u8]) {
         assert_eq!(
             data.len(),
-            self.size.iter().copied().product::<u32>() as usize
+            self.size.iter().copied().product::<u32>() as usize * 4
         );
 
         self.gpu.queue.write_texture(

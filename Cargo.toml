@@ -33,7 +33,8 @@ members = [
     "examples/basic",
     "examples/buffer-resize",
     "examples/dots",
-    "examples/mandelbrot-interactive",
-    "examples/mandelbrot",
     "examples/hello-triangle",
+    "examples/mandelbrot",
+    "examples/mandelbrot-interactive",
+    "examples/texture-mapping",
 ]
