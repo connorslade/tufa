@@ -1,3 +1,5 @@
+use std::time::Instant;
+
 use anyhow::{Ok, Result};
 use encase::ShaderType;
 use image::ImageReader;
@@ -5,7 +7,7 @@ use tufa::{
     bindings::{IndexBuffer, UniformBuffer, VertexBuffer},
     export::{
         egui::{Context, Key, Window},
-        nalgebra::{Matrix4, Vector2, Vector4},
+        nalgebra::{Matrix4, Vector2, Vector3, Vector4},
         wgpu::{include_wgsl, FilterMode, RenderPass, ShaderStages},
         winit::{
             event::{DeviceEvent, DeviceId},
@@ -18,6 +20,7 @@ use tufa::{
 };
 
 struct App {
+    start: Instant,
     camera: PerspectiveCamera,
     camera_active: bool,
     perspective_correction: bool,
@@ -63,6 +66,7 @@ fn main() -> Result<()> {
     gpu.create_window(
         WindowAttributes::default(),
         App {
+            start: Instant::now(),
             camera: PerspectiveCamera::default(),
             camera_active: true,
             perspective_correction: true,
@@ -86,11 +90,14 @@ impl Interactive for App {
             gcx.window.set_cursor_grab(CursorGrabMode::None).unwrap();
         }
 
+        let t = self.start.elapsed().as_secs_f32();
+        let model = Matrix4::new_rotation(Vector3::new(t.sin(), t.cos(), 0.0) * 0.5);
+
         let window = gcx.window.inner_size();
         let aspect = window.width as f32 / window.height as f32;
         self.uniform
             .upload(&Uniform {
-                transform: self.camera.view_projection(aspect),
+                transform: self.camera.view_projection(aspect) * model,
                 flags: self.perspective_correction as u32,
             })
             .unwrap();
