@@ -28,6 +28,9 @@ winit = { version = "0.30.7", optional = true }
 [features]
 interactive = ["egui", "egui-wgpu", "egui-winit", "winit"]
 
+[package.metadata.docs.rs]
+all-features = true
+
 [workspace]
 members = [
     "examples/basic",

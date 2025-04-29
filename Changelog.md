@@ -1,12 +1,16 @@
 # Changelog
 
-## 0.1.1 &mdash; Coming Soon
+## 0.1.2 &mdash; Coming Soon
+
+- Enable `interactive` feature in docs.rs build
+
+## 0.1.1 &mdash; April 28th, 2025
 
 - Added hello-triangle example
 - Added PerspectiveCamera struct under the interactive feature
 - Make Sampler public (it should have been!)
 - Add texture-mapping example
 
-## 0.1.0 &mdash; April 4th 2025
+## 0.1.0 &mdash; April 4th, 2025
 
 - First public release
