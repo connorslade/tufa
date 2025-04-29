@@ -27,18 +27,8 @@ winit = { version = "0.30.7", optional = true }
 
 [features]
 interactive = ["egui", "egui-wgpu", "egui-winit", "winit"]
+default = ["interactive"]
 
-[package.metadata.docs.rs]
-all-features = true
-
-[workspace]
-members = [
-    "examples/basic",
-    "examples/buffer-resize",
-    "examples/dots",
-    "examples/hello-triangle",
-    "examples/mandelbrot",
-    "examples/mandelbrot-interactive",
-    "examples/offline-triangle",
-    "examples/texture-mapping",
-]
+[dev-dependencies]
+image = "0.25.6"
+rand = "0.9.1"

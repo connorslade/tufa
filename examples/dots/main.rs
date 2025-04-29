@@ -2,9 +2,9 @@ use std::{ops::RangeInclusive, time::Instant};
 
 use anyhow::{Ok, Result};
 use encase::ShaderType;
-use rand::{thread_rng, Rng};
+use rand::Rng;
 use tufa::{
-    bindings::{StorageBuffer, UniformBuffer},
+    bindings::{mutability::Mutable, StorageBuffer, UniformBuffer},
     export::{
         egui::{emath::Numeric, Context, Slider, Ui, Window},
         nalgebra::{Vector2, Vector3},
@@ -13,7 +13,6 @@ use tufa::{
     },
     gpu::Gpu,
     interactive::{GraphicsCtx, Interactive},
-    misc::mutability::Mutable,
     pipeline::{compute::ComputePipeline, render::RenderPipeline},
 };
 
@@ -29,7 +28,7 @@ fn main() -> Result<()> {
     let uniform = gpu.create_uniform(&ctx)?;
 
     let dots = (0..100).map(|_| Particle::random()).collect::<Vec<_>>();
-    let dots = gpu.create_storage(&dots)?;
+    let dots = gpu.create_storage(&dots);
 
     let render = gpu
         .render_pipeline(include_wgsl!("render.wgsl"))
@@ -77,10 +76,11 @@ struct Uniform {
 
 impl Particle {
     fn random() -> Self {
-        let mut rand = thread_rng();
+        let mut rand = rand::rng();
         Self {
-            position: Vector2::new(rand.gen(), rand.gen()),
-            velocity: (Vector2::new(rand.gen(), rand.gen()) * 2.0 - Vector2::repeat(1.0)) / 120.0,
+            position: Vector2::new(rand.random(), rand.random()),
+            velocity: (Vector2::new(rand.random(), rand.random()) * 2.0 - Vector2::repeat(1.0))
+                / 120.0,
         }
     }
 }
@@ -131,7 +131,7 @@ impl Interactive for App {
         let screen = gcx.window.inner_size();
         self.ctx.window = Vector2::new(screen.width as f32, screen.height as f32);
 
-        self.uniform.upload(&self.ctx).unwrap();
+        self.uniform.upload(&self.ctx);
         self.compute.dispatch(Vector3::new(self.dot_count, 1, 1));
         self.render.draw_quad(render_pass, 0..self.dot_count);
     }

@@ -15,6 +15,7 @@ pub mod texture;
 
 pub use buffer::blas::BlasBuffer;
 pub use buffer::index::IndexBuffer;
+pub use buffer::mutability;
 pub use buffer::storage::StorageBuffer;
 pub use buffer::uniform::UniformBuffer;
 pub use buffer::vertex::VertexBuffer;

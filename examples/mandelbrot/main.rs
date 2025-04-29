@@ -2,6 +2,7 @@ use anyhow::Result;
 
 use image::{ImageBuffer, Rgb};
 use tufa::{
+    bindings::mutability::Mutable,
     export::{
         encase::ShaderType,
         nalgebra::{Vector2, Vector3},
@@ -25,7 +26,7 @@ fn main() -> Result<()> {
         size: SIZE,
         zoom: 0.0,
     })?;
-    let buffer = gpu.create_storage(&vec![0u32; (SIZE.x * SIZE.y) as usize])?;
+    let buffer = gpu.create_storage_empty::<Vec<u32>, Mutable>((4 * SIZE.x * SIZE.y) as u64);
 
     let mut pipeline = gpu
         .compute_pipeline(include_wgsl!("shader.wgsl"))
@@ -37,7 +38,7 @@ fn main() -> Result<()> {
         uniform.upload(&Uniform {
             size: SIZE,
             zoom: zoom as f32 / 10.0,
-        })?;
+        });
 
         pipeline.dispatch(Vector3::new(SIZE.x / 8, SIZE.y / 8, 1));
         buffer.download_async(move |result| {

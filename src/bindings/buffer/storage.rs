@@ -132,44 +132,52 @@ impl<T: ShaderType + WriteInto + CreateFrom, Mut: Mutability> StorageBuffer<T, M
 }
 
 impl Gpu {
-    pub fn create_storage<T>(&self, data: &T) -> Result<StorageBuffer<T, Mutable>>
+    pub fn create_storage<T, Mut: Mutability>(&self, data: &T) -> StorageBuffer<T, Mut>
     where
         T: ShaderType + WriteInto + CreateFrom,
     {
-        create_storage(self, data)
+        let mut buffer = Vec::new();
+        let mut storage = encase::StorageBuffer::new(&mut buffer);
+        storage.write(data).unwrap();
+
+        let id = BufferId::new();
+        let buffer = self.device.create_buffer_init(&BufferInitDescriptor {
+            label: None,
+            usage: BufferUsages::COPY_DST | BufferUsages::COPY_SRC | BufferUsages::STORAGE,
+            contents: &buffer,
+        });
+
+        self.binding_manager.add_resource(id, buffer);
+        StorageBuffer {
+            gpu: self.clone(),
+            buffer: id,
+
+            _type: PhantomData,
+            _mut: PhantomData,
+        }
     }
 
-    pub fn create_storage_read<T>(&self, data: &T) -> Result<StorageBuffer<T, Immutable>>
+    pub fn create_storage_empty<T, Mut: Mutability>(&self, size: u64) -> StorageBuffer<T, Mut>
     where
         T: ShaderType + WriteInto + CreateFrom,
     {
-        create_storage(self, data)
+        let id = BufferId::new();
+        let buffer = self.device.create_buffer(&BufferDescriptor {
+            label: None,
+            usage: BufferUsages::COPY_DST | BufferUsages::COPY_SRC | BufferUsages::STORAGE,
+            mapped_at_creation: false,
+            size,
+        });
+
+        self.binding_manager.add_resource(id, buffer);
+        StorageBuffer {
+            gpu: self.clone(),
+            buffer: id,
+
+            _type: PhantomData,
+            _mut: PhantomData,
+        }
     }
-}
-
-fn create_storage<T, Mut: Mutability>(gpu: &Gpu, data: &T) -> Result<StorageBuffer<T, Mut>>
-where
-    T: ShaderType + WriteInto + CreateFrom,
-{
-    let mut buffer = Vec::new();
-    let mut storage = encase::StorageBuffer::new(&mut buffer);
-    storage.write(data)?;
-
-    let id = BufferId::new();
-    let buffer = gpu.device.create_buffer_init(&BufferInitDescriptor {
-        label: None,
-        usage: BufferUsages::COPY_DST | BufferUsages::COPY_SRC | BufferUsages::STORAGE,
-        contents: &buffer,
-    });
-
-    gpu.binding_manager.add_resource(id, buffer);
-    Ok(StorageBuffer {
-        gpu: gpu.clone(),
-        buffer: id,
-
-        _type: PhantomData,
-        _mut: PhantomData,
-    })
 }
 
 impl<T: ShaderType + WriteInto + CreateFrom> Bindable for StorageBuffer<T, Mutable> {

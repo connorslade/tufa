@@ -32,13 +32,12 @@ impl<T: ShaderType + WriteInto + CreateFrom> UniformBuffer<T> {
     }
 
     /// Uploads data into the buffer
-    pub fn upload(&self, data: &T) -> Result<()> {
+    pub fn upload(&self, data: &T) {
         let mut buffer = Vec::new();
         let mut storage = StorageBuffer::new(&mut buffer);
-        storage.write(data)?;
+        storage.write(data).unwrap();
 
         self.gpu.queue.write_buffer(&self.get(), 0, &buffer);
-        Ok(())
     }
 }
 

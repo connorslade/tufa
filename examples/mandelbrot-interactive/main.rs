@@ -36,7 +36,7 @@ impl Interactive for App {
         let window = gcx.window.inner_size();
         self.ctx.window = Vector2::new(window.width, window.height);
 
-        self.uniform.upload(&self.ctx).unwrap();
+        self.uniform.upload(&self.ctx);
         self.render.draw_quad(render_pass, 0..1);
     }
 

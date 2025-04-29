@@ -12,7 +12,8 @@ use tufa::{
         },
     },
     gpu::Gpu,
-    interactive::{misc::camera::PerspectiveCamera, GraphicsCtx, Interactive},
+    interactive::{GraphicsCtx, Interactive},
+    misc::camera::PerspectiveCamera,
     pipeline::render::{RenderPipeline, Vertex},
 };
 
@@ -68,7 +69,7 @@ impl Interactive for App {
         let aspect = size.width as f32 / size.height as f32;
 
         let transformation = self.camera.view_projection(aspect);
-        self.uniform.upload(&Uniform { transformation }).unwrap();
+        self.uniform.upload(&Uniform { transformation });
 
         self.render
             .draw(render_pass, &self.index, &self.vertex, 0..3);

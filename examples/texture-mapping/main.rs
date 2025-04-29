@@ -2,9 +2,8 @@ use std::time::Instant;
 
 use anyhow::{Ok, Result};
 use encase::ShaderType;
-use image::ImageReader;
 use tufa::{
-    bindings::{IndexBuffer, UniformBuffer, VertexBuffer},
+    bindings::{texture::format::Rgba8, IndexBuffer, UniformBuffer, VertexBuffer},
     export::{
         egui::{Context, Key, Window},
         nalgebra::{Matrix4, Vector2, Vector3, Vector4},
@@ -15,7 +14,8 @@ use tufa::{
         },
     },
     gpu::Gpu,
-    interactive::{misc::camera::PerspectiveCamera, GraphicsCtx, Interactive},
+    interactive::{GraphicsCtx, Interactive},
+    misc::camera::PerspectiveCamera,
     pipeline::render::{RenderPipeline, Vertex},
 };
 
@@ -41,8 +41,8 @@ fn main() -> Result<()> {
     let gpu = Gpu::new()?;
 
     let sampler = gpu.create_sampler(FilterMode::Nearest);
-    let texture = gpu.create_texture_2d(Vector2::repeat(64));
-    let image = ImageReader::open("brick.png")?.decode()?;
+    let texture = gpu.create_texture_2d::<Rgba8>(Vector2::repeat(64));
+    let image = image::load_from_memory(include_bytes!("brick.png")).unwrap();
     texture.upload(&image.into_rgba8());
 
     let uniform = gpu.create_uniform(&Uniform::default())?;
@@ -67,7 +67,7 @@ fn main() -> Result<()> {
         WindowAttributes::default(),
         App {
             start: Instant::now(),
-            camera: PerspectiveCamera::default(),
+            camera: PerspectiveCamera::default().with_position(Vector3::z() * -2.0),
             camera_active: true,
             perspective_correction: true,
             pipeline,
@@ -95,12 +95,10 @@ impl Interactive for App {
 
         let window = gcx.window.inner_size();
         let aspect = window.width as f32 / window.height as f32;
-        self.uniform
-            .upload(&Uniform {
-                transform: self.camera.view_projection(aspect) * model,
-                flags: self.perspective_correction as u32,
-            })
-            .unwrap();
+        self.uniform.upload(&Uniform {
+            transform: self.camera.view_projection(aspect) * model,
+            flags: self.perspective_correction as u32,
+        });
         self.pipeline
             .draw(render_pass, &self.index, &self.vertex, 0..6);
     }
