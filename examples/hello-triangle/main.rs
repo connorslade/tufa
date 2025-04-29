@@ -4,7 +4,7 @@ use tufa::{
     bindings::{IndexBuffer, UniformBuffer, VertexBuffer},
     export::{
         egui::Context,
-        nalgebra::{Matrix4, Vector2, Vector4},
+        nalgebra::{Matrix4, Vector2, Vector3, Vector4},
         wgpu::{include_wgsl, RenderPass, ShaderStages},
         winit::{
             event::{DeviceEvent, DeviceId},
@@ -47,7 +47,7 @@ fn main() -> Result<()> {
     gpu.create_window(
         WindowAttributes::default().with_title("Simple 3d"),
         App {
-            camera: PerspectiveCamera::default(),
+            camera: PerspectiveCamera::default().with_position(-Vector3::z()),
             uniform,
             vertex,
             index,

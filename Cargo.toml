@@ -39,5 +39,6 @@ members = [
     "examples/hello-triangle",
     "examples/mandelbrot",
     "examples/mandelbrot-interactive",
+    "examples/offline-triangle",
     "examples/texture-mapping",
 ]

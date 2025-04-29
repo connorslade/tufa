@@ -1,22 +1,30 @@
+use std::marker::PhantomData;
+
+use format::TextureFormat;
 use nalgebra::{Vector2, Vector3};
 use wgpu::{
-    BindingType, Extent3d, TexelCopyBufferLayout, TextureDescriptor, TextureDimension,
-    TextureSampleType, TextureUsages, TextureViewDescriptor, TextureViewDimension,
+    BindingType, Extent3d, Origin3d, TexelCopyBufferInfo, TexelCopyBufferLayout,
+    TexelCopyTextureInfo, TextureAspect, TextureDescriptor, TextureDimension, TextureSampleType,
+    TextureUsages, TextureViewDescriptor, TextureViewDimension,
 };
 
-use crate::{gpu::Gpu, misc::ids::TextureId, TEXTURE_FORMAT};
+use crate::{bindings::buffer::mutability::Mutability, gpu::Gpu, misc::ids::TextureId};
 
-use super::{Bindable, BindableResourceId};
+use super::{Bindable, BindableResourceId, StorageBuffer};
 
-pub struct Texture {
+pub mod format;
+
+pub struct Texture<Format: TextureFormat> {
     gpu: Gpu,
 
     pub(crate) id: TextureId,
     texture: wgpu::Texture,
     size: Vector3<u32>,
+
+    _format: PhantomData<Format>,
 }
 
-impl Texture {
+impl<Format: TextureFormat> Texture<Format> {
     pub fn upload(&self, data: &[u8]) {
         assert_eq!(
             data.len(),
@@ -38,10 +46,39 @@ impl Texture {
             },
         );
     }
+
+    pub fn copy_to_buffer<Mut: Mutability>(&self, buffer: &StorageBuffer<Vec<u32>, Mut>) {
+        let buffer = self.gpu.binding_manager.get_resource(buffer.buffer);
+        let buffer = buffer.expect_buffer();
+
+        self.gpu.immediate_dispatch(|encoder| {
+            encoder.copy_texture_to_buffer(
+                TexelCopyTextureInfo {
+                    texture: &self.texture,
+                    mip_level: 0,
+                    origin: Origin3d::ZERO,
+                    aspect: TextureAspect::All,
+                },
+                TexelCopyBufferInfo {
+                    buffer,
+                    layout: TexelCopyBufferLayout {
+                        offset: 0,
+                        bytes_per_row: Some(self.size.x * 4),
+                        rows_per_image: Some(self.size.y),
+                    },
+                },
+                Extent3d {
+                    width: self.size.x,
+                    height: self.size.y,
+                    depth_or_array_layers: self.size.z,
+                },
+            );
+        });
+    }
 }
 
 impl Gpu {
-    pub fn create_texture_2d(&self, size: Vector2<u32>) -> Texture {
+    pub fn create_texture_2d<Format: TextureFormat>(&self, size: Vector2<u32>) -> Texture<Format> {
         let texture = self.device.create_texture(&TextureDescriptor {
             label: None,
             size: Extent3d {
@@ -52,8 +89,11 @@ impl Gpu {
             mip_level_count: 1,
             sample_count: 1,
             dimension: TextureDimension::D2,
-            format: TEXTURE_FORMAT,
-            usage: TextureUsages::TEXTURE_BINDING | TextureUsages::COPY_DST,
+            format: Format::as_format(),
+            usage: TextureUsages::TEXTURE_BINDING
+                | TextureUsages::COPY_DST
+                | TextureUsages::RENDER_ATTACHMENT
+                | TextureUsages::COPY_SRC,
             view_formats: &[],
         });
 
@@ -66,11 +106,12 @@ impl Gpu {
             id,
             texture,
             size: Vector3::new(size.x, size.y, 1),
+            _format: PhantomData,
         }
     }
 }
 
-impl Bindable for Texture {
+impl<Format: TextureFormat> Bindable for Texture<Format> {
     fn resource_id(&self) -> BindableResourceId {
         BindableResourceId::Texture(self.id)
     }

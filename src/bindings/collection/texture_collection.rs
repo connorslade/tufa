@@ -3,7 +3,7 @@ use std::num::NonZeroU32;
 use wgpu::{BindingType, TextureSampleType, TextureViewDimension};
 
 use crate::{
-    bindings::{Bindable, BindableResourceId, Texture},
+    bindings::{texture::format::TextureFormat, Bindable, BindableResourceId, Texture},
     gpu::Gpu,
     misc::ids::TextureCollectionId,
 };
@@ -14,7 +14,10 @@ pub struct TextureCollection {
 }
 
 impl Gpu {
-    pub fn create_texture_collection(&self, textures: &[Texture]) -> TextureCollection {
+    pub fn create_texture_collection<Format: TextureFormat>(
+        &self,
+        textures: &[Texture<Format>],
+    ) -> TextureCollection {
         let id = TextureCollectionId::new();
 
         self.binding_manager

@@ -12,19 +12,18 @@ use wgpu::{
 };
 
 use crate::{
-    bindings::{Bindable, BindableResourceId},
-    gpu::Gpu,
-    misc::{
-        ids::BufferId,
-        mutability::{Immutable, Mutability, Mutable},
-        thread_ptr::ThreadSafePtr,
+    bindings::{
+        buffer::mutability::{Immutable, Mutability, Mutable},
+        Bindable, BindableResourceId,
     },
+    gpu::Gpu,
+    misc::{ids::BufferId, thread_ptr::ThreadSafePtr},
 };
 
 /// A storage buffer is a buffer that can be read from or written to in the shader
 pub struct StorageBuffer<T, Mut: Mutability> {
-    gpu: Gpu,
-    buffer: BufferId,
+    pub gpu: Gpu,
+    pub buffer: BufferId,
 
     _type: PhantomData<T>,
     _mut: PhantomData<Mut>,

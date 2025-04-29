@@ -1,10 +1,10 @@
 use std::f32::consts::FRAC_PI_2;
 
+#[cfg(feature = "interactive")]
 use egui::{Context, Key, Ui, WidgetText};
 use nalgebra::{Matrix4, Point3, Vector3};
+#[cfg(feature = "interactive")]
 use winit::event::DeviceEvent;
-
-use super::ui::{dragger, vec3_dragger};
 
 #[derive(Clone, Copy)]
 pub struct PerspectiveCamera {
@@ -21,9 +21,22 @@ impl PerspectiveCamera {
     pub fn with_far(self, far: f32) -> Self {
         Self { far, ..self }
     }
+
+    pub fn with_position(self, position: Vector3<f32>) -> Self {
+        Self { position, ..self }
+    }
+
+    pub fn with_yaw(self, yaw: f32) -> Self {
+        Self { yaw, ..self }
+    }
+
+    pub fn with_pitch(self, pitch: f32) -> Self {
+        Self { pitch, ..self }
+    }
 }
 
 impl PerspectiveCamera {
+    #[cfg(feature = "interactive")]
     pub fn update(&mut self, ctx: &Context) {
         ctx.input(|input| {
             let facing = self.facing();
@@ -47,6 +60,7 @@ impl PerspectiveCamera {
         });
     }
 
+    #[cfg(feature = "interactive")]
     pub fn device_event(&mut self, event: &DeviceEvent) {
         if let DeviceEvent::MouseMotion { delta } = event {
             self.yaw -= delta.0 as f32 * 0.01;
@@ -54,7 +68,10 @@ impl PerspectiveCamera {
         }
     }
 
+    #[cfg(feature = "interactive")]
     pub fn ui(&mut self, ui: &mut Ui, name: impl Into<WidgetText>) {
+        use crate::interactive::ui::{dragger, vec3_dragger};
+
         ui.collapsing(name, |ui| {
             ui.horizontal(|ui| {
                 ui.label("Position");

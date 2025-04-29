@@ -5,7 +5,7 @@ use winit::event::{DeviceEvent, DeviceId, WindowEvent};
 use crate::gpu::Gpu;
 
 pub mod egui;
-pub mod misc;
+pub mod ui;
 pub mod window;
 
 #[derive(Clone)]

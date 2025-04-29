@@ -11,7 +11,7 @@ mod buffer;
 mod collection;
 pub mod manager;
 mod sampler;
-mod texture;
+pub mod texture;
 
 pub use buffer::blas::BlasBuffer;
 pub use buffer::index::IndexBuffer;

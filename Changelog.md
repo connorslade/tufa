@@ -3,6 +3,9 @@
 ## 0.1.2 &mdash; Coming Soon
 
 - Enable `interactive` feature in docs.rs build
+- Added support for custom render passes
+- Offline triangle demo
+- Added texture format type to `Texture` binding
 
 ## 0.1.1 &mdash; April 28th, 2025
 

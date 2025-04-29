@@ -20,6 +20,7 @@ use crate::{
 
 use super::PipelineStatus;
 pub mod consts;
+pub mod pass;
 
 #[derive(ShaderType)]
 pub struct Vertex {
