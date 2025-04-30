@@ -1,6 +1,5 @@
 use std::marker::PhantomData;
 
-use anyhow::Result;
 use encase::{internal::WriteInto, DynamicStorageBuffer, ShaderSize, ShaderType, StorageBuffer};
 use parking_lot::MappedRwLockReadGuard;
 use wgpu::{
@@ -27,27 +26,26 @@ impl<T> BlasBuffer<T> {
         })
     }
 
-    pub fn upload(&self, data: &[T]) -> Result<()>
+    pub fn upload(&self, data: &[T])
     where
         T: ShaderType + ShaderSize + WriteInto,
     {
         let mut buffer = Vec::new();
         let mut storage = StorageBuffer::new(&mut buffer);
-        storage.write(&data)?;
+        storage.write(&data).unwrap();
 
         self.gpu.queue.write_buffer(&self.get(), 0, &buffer);
-        Ok(())
     }
 }
 
 impl Gpu {
-    pub fn create_blas<T>(&self, data: &[T]) -> Result<BlasBuffer<T>>
+    pub fn create_blas<T>(&self, data: &[T]) -> BlasBuffer<T>
     where
         T: ShaderType + ShaderSize + WriteInto,
     {
         let mut buffer = Vec::new();
         let mut storage = DynamicStorageBuffer::new(&mut buffer);
-        storage.write(data)?;
+        storage.write(data).unwrap();
 
         let id = BufferId::new();
         let buffer = self.device.create_buffer_init(&BufferInitDescriptor {
@@ -57,11 +55,11 @@ impl Gpu {
         });
 
         self.binding_manager.add_resource(id, buffer);
-        Ok(BlasBuffer {
+        BlasBuffer {
             gpu: self.clone(),
             buffer: id,
             _type: PhantomData,
-        })
+        }
     }
 }
 

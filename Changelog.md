@@ -6,6 +6,7 @@
 - Added support for custom render passes
 - Offline triangle demo
 - Added texture format type to `Texture` binding
+- Don't return Result from infallible operations
 
 ## 0.1.1 &mdash; April 28th, 2025
 

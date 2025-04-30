@@ -26,7 +26,7 @@ fn main() -> Result<()> {
 
     let now = Instant::now();
     pipeline.dispatch_callback(Vector3::new(1, 1, 1), move || {
-        let result = buffer.download().unwrap();
+        let result = buffer.download();
         println!("Result: {}. ({:?})", result.a, now.elapsed());
     });
     println!("Dispatched! ({:?})", now.elapsed());

@@ -1,4 +1,3 @@
-use anyhow::Result;
 use parking_lot::MappedRwLockReadGuard;
 use wgpu::{
     util::{BufferInitDescriptor, DeviceExt},
@@ -23,7 +22,7 @@ impl IndexBuffer {
         })
     }
 
-    pub fn upload(&self, data: &[u32]) -> Result<()> {
+    pub fn upload(&self, data: &[u32]) {
         let buffer = bytemuck::cast_slice(data);
 
         let this = self.get();
@@ -41,8 +40,6 @@ impl IndexBuffer {
         } else {
             self.gpu.queue.write_buffer(&this, 0, buffer);
         }
-
-        Ok(())
     }
 }
 

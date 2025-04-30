@@ -21,11 +21,7 @@ impl DefaultBuffers {
     }
 
     pub fn get(&self, gpu: &Gpu) -> &(VertexBuffer<Vertex>, IndexBuffer) {
-        self.buffers.get_or_init(|| {
-            (
-                gpu.create_vertex(QUAD_VERTEX).unwrap(),
-                gpu.create_index(QUAD_INDEX),
-            )
-        })
+        self.buffers
+            .get_or_init(|| (gpu.create_vertex(QUAD_VERTEX), gpu.create_index(QUAD_INDEX)))
     }
 }

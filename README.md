@@ -50,10 +50,7 @@ fn evaluate(c: vec2<f32>) -> vec3<f32> {
     var z = vec2(0.0);
     for (var i = 0; i < N; i++) {
         z = cSq(z) + c;
-
-        if i + 1 == N {
-            break;
-        }
+        if i + 1 == N { break; }
 
         if length(z) > 4.0 {
             var value = sqrt(f32(i) / f32(N));
@@ -88,36 +85,31 @@ struct Uniform {
 }
 
 const SIZE: Vector2<u32> = Vector2::new(4096, 4096);
+let gpu = Gpu::new()?;
 
-fn main() -> Result<()> {
-    let gpu = Gpu::init()?;
+let uniform = gpu.create_uniform(&Uniform { size: SIZE, zoom: 0.0 });
+let buffer = gpu.create_storage_empty::<Vec<u32>, Mutable>((4 * SIZE.x * SIZE.y) as u64);
 
-    let uniform = gpu.create_uniform(Uniform { size: SIZE, zoom: 0.0 })?;
-    let buffer = gpu.create_storage(vec![0; (SIZE.x * SIZE.y) as usize])?;
+let mut pipeline = gpu
+    .compute_pipeline(include_wgsl!("shader.wgsl"))
+    .bind(&uniform)
+    .bind(&buffer)
+    .finish();
 
-    let pipeline = gpu
-        .compute_pipeline(include_wgsl!("shader.wgsl"))
-        .bind(&uniform)
-        .bind(&buffer)
-        .finish();
+for zoom in 0..10_0 {
+    uniform.upload(&Uniform {
+        size: SIZE,
+        zoom: zoom as f32 / 10.0,
+    });
 
-    for zoom in 0..15_00 {
-        uniform.upload(Uniform {
-            size: SIZE,
-            zoom: zoom as f32 / 100.0,
-        })?;
-
-        pipeline.dispatch(Vector3::new(SIZE.x / 8, SIZE.y / 8, 1));
-        buffer.download_async(move |result| {
-            ImageBuffer::from_par_fn(SIZE.x, SIZE.y, |x, y| {
-                let color = result[(y * SIZE.x + x) as usize];
-                Rgb([color as u8, (color >> 8) as u8, (color >> 16) as u8])
-            })
-            .save(format!("rec/out-{zoom:0>4}.png"))
-            .unwrap();
-        });
-    }
-
-    Ok(())
+    pipeline.dispatch(Vector3::new(SIZE.x / 8, SIZE.y / 8, 1));
+    buffer.download_async(move |result| {
+        ImageBuffer::from_par_fn(SIZE.x, SIZE.y, |x, y| {
+            let color = result[(y * SIZE.x + x) as usize];
+            Rgb([color as u8, (color >> 8) as u8, (color >> 16) as u8])
+        })
+        .save(format!("rec/out-{zoom:0>4}.png"))
+        .unwrap();
+    });
 }
 ```

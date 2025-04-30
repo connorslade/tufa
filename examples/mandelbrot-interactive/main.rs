@@ -89,7 +89,7 @@ impl Interactive for App {
 fn main() -> Result<()> {
     let gpu = Gpu::new()?;
 
-    let uniform = gpu.create_uniform(&Uniform::default()).unwrap();
+    let uniform = gpu.create_uniform(&Uniform::default());
     let render = gpu
         .render_pipeline(include_wgsl!("render.wgsl"))
         .bind(&uniform, ShaderStages::FRAGMENT)

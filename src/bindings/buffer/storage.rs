@@ -1,6 +1,5 @@
 use std::{marker::PhantomData, thread};
 
-use anyhow::Result;
 use encase::{
     internal::{CreateFrom, WriteInto},
     DynamicStorageBuffer, ShaderType,
@@ -37,19 +36,19 @@ impl<T: ShaderType + WriteInto + CreateFrom, Mut: Mutability> StorageBuffer<T, M
     }
 
     /// Uploads data into the buffer
-    pub fn upload(&self, data: &T) -> Result<()> {
+    pub fn upload(&self, data: &T) {
         self.upload_inner(data, false)
     }
 
     /// Uploads data into the buffer, reallocating to the minimum needed buffer size.
-    pub fn upload_shrink(&self, data: &T) -> Result<()> {
+    pub fn upload_shrink(&self, data: &T) {
         self.upload_inner(data, true)
     }
 
-    fn upload_inner(&self, data: &T, shrink: bool) -> Result<()> {
+    fn upload_inner(&self, data: &T, shrink: bool) {
         let mut bytes = Vec::new();
         let mut storage = encase::StorageBuffer::new(&mut bytes);
-        storage.write(data)?;
+        storage.write(data).unwrap();
 
         let buffer = self.get();
         let current_size = buffer.size() as usize;
@@ -68,12 +67,11 @@ impl<T: ShaderType + WriteInto + CreateFrom, Mut: Mutability> StorageBuffer<T, M
         } else {
             self.gpu.queue.write_buffer(&buffer, 0, &bytes);
         }
-        Ok(())
     }
 
     /// Downloads the buffer from the GPU in a blocking manner. This can be
     /// pretty slow.
-    pub fn download(&self) -> Result<T> {
+    pub fn download(&self) -> T {
         let buffer = self.get();
         let staging = self.gpu.device.create_buffer(&BufferDescriptor {
             label: None,
@@ -97,7 +95,7 @@ impl<T: ShaderType + WriteInto + CreateFrom, Mut: Mutability> StorageBuffer<T, M
         let data = slice.get_mapped_range().to_vec();
         let mut store = encase::DynamicStorageBuffer::new(data);
 
-        Ok(store.create()?)
+        store.create().unwrap()
     }
 
     /// Requests the download of the buffer. The provided callback will be

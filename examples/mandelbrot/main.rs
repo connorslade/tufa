@@ -25,7 +25,7 @@ fn main() -> Result<()> {
     let uniform = gpu.create_uniform(&Uniform {
         size: SIZE,
         zoom: 0.0,
-    })?;
+    });
     let buffer = gpu.create_storage_empty::<Vec<u32>, Mutable>((4 * SIZE.x * SIZE.y) as u64);
 
     let mut pipeline = gpu

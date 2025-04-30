@@ -45,7 +45,7 @@ fn main() -> Result<()> {
     let image = image::load_from_memory(include_bytes!("brick.png")).unwrap();
     texture.upload(&image.into_rgba8());
 
-    let uniform = gpu.create_uniform(&Uniform::default())?;
+    let uniform = gpu.create_uniform(&Uniform::default());
     let pipeline = gpu
         .render_pipeline(include_wgsl!("shader.wgsl"))
         .bind(&uniform, ShaderStages::VERTEX_FRAGMENT)
@@ -53,14 +53,12 @@ fn main() -> Result<()> {
         .bind(&sampler, ShaderStages::FRAGMENT)
         .finish();
 
-    let vertex = gpu
-        .create_vertex(&[
-            Vertex::new(Vector4::new(-1.0, -1.0, 0.0, 1.0), Vector2::new(0.0, 0.0)),
-            Vertex::new(Vector4::new(-1.0, 1.0, 0.0, 1.0), Vector2::new(0.0, 1.0)),
-            Vertex::new(Vector4::new(1.0, 1.0, 0.0, 1.0), Vector2::new(1.0, 1.0)),
-            Vertex::new(Vector4::new(1.0, -1.0, 0.0, 1.0), Vector2::new(1.0, 0.0)),
-        ])
-        .unwrap();
+    let vertex = gpu.create_vertex(&[
+        Vertex::new(Vector4::new(-1.0, -1.0, 0.0, 1.0), Vector2::new(0.0, 0.0)),
+        Vertex::new(Vector4::new(-1.0, 1.0, 0.0, 1.0), Vector2::new(0.0, 1.0)),
+        Vertex::new(Vector4::new(1.0, 1.0, 0.0, 1.0), Vector2::new(1.0, 1.0)),
+        Vertex::new(Vector4::new(1.0, -1.0, 0.0, 1.0), Vector2::new(1.0, 0.0)),
+    ]);
     let index = gpu.create_index(&[0, 1, 2, 2, 3, 0]);
 
     gpu.create_window(

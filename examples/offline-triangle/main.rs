@@ -26,12 +26,12 @@ fn main() -> Result<()> {
     let gpu = Gpu::new()?;
 
     let camera = PerspectiveCamera::default().with_position(-Vector3::z());
-    let uniform = gpu.create_uniform(&Uniform::default())?;
+    let uniform = gpu.create_uniform(&Uniform::default());
     let vertex = gpu.create_vertex(&[
         Vertex::new(Vector4::new(0.0, 0.5, 0.0, 1.0), Vector2::new(0.0, 1.0)),
         Vertex::new(Vector4::new(-0.5, -0.5, 0.0, 1.0), Vector2::new(0.0, 0.0)),
         Vertex::new(Vector4::new(0.5, -0.5, 0.0, 1.0), Vector2::new(1.0, 0.0)),
-    ])?;
+    ]);
     let index = gpu.create_index(&[0, 1, 2]);
     let mut render = gpu
         .render_pipeline(include_wgsl!("shader.wgsl"))

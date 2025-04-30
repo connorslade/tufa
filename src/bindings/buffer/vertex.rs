@@ -1,6 +1,5 @@
 use std::marker::PhantomData;
 
-use anyhow::Result;
 use encase::{internal::WriteInto, DynamicStorageBuffer, ShaderSize, ShaderType, StorageBuffer};
 use parking_lot::MappedRwLockReadGuard;
 use wgpu::{
@@ -27,13 +26,13 @@ impl<T> VertexBuffer<T> {
         })
     }
 
-    pub fn upload(&self, data: &[T]) -> Result<()>
+    pub fn upload(&self, data: &[T])
     where
         T: ShaderType + ShaderSize + WriteInto,
     {
         let mut buffer = Vec::new();
         let mut storage = StorageBuffer::new(&mut buffer);
-        storage.write(&data)?;
+        storage.write(&data).unwrap();
 
         let this = self.get();
         if buffer.len() as u64 > this.size() {
@@ -50,18 +49,17 @@ impl<T> VertexBuffer<T> {
         } else {
             self.gpu.queue.write_buffer(&this, 0, &buffer);
         }
-        Ok(())
     }
 }
 
 impl Gpu {
-    pub fn create_vertex<T>(&self, data: &[T]) -> Result<VertexBuffer<T>>
+    pub fn create_vertex<T>(&self, data: &[T]) -> VertexBuffer<T>
     where
         T: ShaderType + ShaderSize + WriteInto,
     {
         let mut buffer = Vec::new();
         let mut storage = DynamicStorageBuffer::new(&mut buffer);
-        storage.write(data)?;
+        storage.write(data).unwrap();
 
         let id = BufferId::new();
         let buffer = self.device.create_buffer_init(&BufferInitDescriptor {
@@ -71,14 +69,14 @@ impl Gpu {
         });
 
         self.binding_manager.add_resource(id, buffer);
-        Ok(VertexBuffer {
+        VertexBuffer {
             gpu: self.clone(),
             buffer: id,
             _type: PhantomData,
-        })
+        }
     }
 
-    pub fn create_vertex_empty<T>(&self, size: usize) -> Result<VertexBuffer<T>>
+    pub fn create_vertex_empty<T>(&self, size: usize) -> VertexBuffer<T>
     where
         T: ShaderType + ShaderSize + WriteInto,
     {
@@ -91,11 +89,11 @@ impl Gpu {
         });
 
         self.binding_manager.add_resource(id, buffer);
-        Ok(VertexBuffer {
+        VertexBuffer {
             gpu: self.clone(),
             buffer: id,
             _type: PhantomData,
-        })
+        }
     }
 }
 

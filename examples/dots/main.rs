@@ -25,7 +25,7 @@ fn main() -> Result<()> {
         border: 1.0,
         speed: 1.0,
     };
-    let uniform = gpu.create_uniform(&ctx)?;
+    let uniform = gpu.create_uniform(&ctx);
 
     let dots = (0..100).map(|_| Particle::random()).collect::<Vec<_>>();
     let dots = gpu.create_storage(&dots);
@@ -122,7 +122,7 @@ impl Interactive for App {
                     let dots = (0..dot_count)
                         .map(|_| Particle::random())
                         .collect::<Vec<_>>();
-                    self.dots.upload(&dots).unwrap();
+                    self.dots.upload(&dots);
                 }
             });
     }
