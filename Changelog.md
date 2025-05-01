@@ -1,13 +1,13 @@
 # Changelog
 
-## 0.1.2 &mdash; Coming Soon
+## 0.1.2 &mdash; March 1st, 2025
 
 - Enable `interactive` feature in docs.rs build
 - Added support for custom render passes
 - Offline triangle demo
 - Added texture format type to `Texture` binding
 - Don't return Result from infallible operations
-- Allow coping texture to any buffer type
+- Allow copying texture to any buffer type
 
 ## 0.1.1 &mdash; April 28th, 2025
 
