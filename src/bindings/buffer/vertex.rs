@@ -13,6 +13,8 @@ use crate::{
     misc::ids::BufferId,
 };
 
+use super::BufferBinding;
+
 pub struct VertexBuffer<T> {
     gpu: Gpu,
     buffer: BufferId,
@@ -94,6 +96,12 @@ impl Gpu {
             buffer: id,
             _type: PhantomData,
         }
+    }
+}
+
+impl<T> BufferBinding for VertexBuffer<T> {
+    fn get_id(&self) -> BufferId {
+        self.buffer
     }
 }
 

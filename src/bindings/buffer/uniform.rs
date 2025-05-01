@@ -16,6 +16,8 @@ use crate::{
     misc::ids::BufferId,
 };
 
+use super::BufferBinding;
+
 /// A uniform buffer is for passing small amounts of read-only data
 pub struct UniformBuffer<T> {
     gpu: Gpu,
@@ -63,6 +65,12 @@ impl Gpu {
             buffer: id,
             _type: PhantomData,
         }
+    }
+}
+
+impl<T> BufferBinding for UniformBuffer<T> {
+    fn get_id(&self) -> BufferId {
+        self.buffer
     }
 }
 

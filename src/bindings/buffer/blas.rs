@@ -7,6 +7,7 @@ use wgpu::{
     BindingType, Buffer, BufferUsages,
 };
 
+use super::BufferBinding;
 use crate::{
     bindings::{Bindable, BindableResourceId},
     gpu::Gpu,
@@ -60,6 +61,12 @@ impl Gpu {
             buffer: id,
             _type: PhantomData,
         }
+    }
+}
+
+impl<T> BufferBinding for BlasBuffer<T> {
+    fn get_id(&self) -> BufferId {
+        self.buffer
     }
 }
 

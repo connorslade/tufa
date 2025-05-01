@@ -10,6 +10,8 @@ use crate::{
     misc::ids::BufferId,
 };
 
+use super::BufferBinding;
+
 pub struct IndexBuffer {
     gpu: Gpu,
     buffer: BufferId,
@@ -73,6 +75,12 @@ impl Gpu {
             gpu: self.clone(),
             buffer: id,
         }
+    }
+}
+
+impl BufferBinding for IndexBuffer {
+    fn get_id(&self) -> BufferId {
+        self.buffer
     }
 }
 

@@ -8,9 +8,9 @@ use wgpu::{
     TextureUsages, TextureViewDescriptor, TextureViewDimension,
 };
 
-use crate::{bindings::buffer::mutability::Mutability, gpu::Gpu, misc::ids::TextureId};
+use crate::{gpu::Gpu, misc::ids::TextureId};
 
-use super::{Bindable, BindableResourceId, StorageBuffer};
+use super::{buffer::BufferBinding, Bindable, BindableResourceId};
 
 pub mod format;
 
@@ -47,8 +47,8 @@ impl<Format: TextureFormat> Texture<Format> {
         );
     }
 
-    pub fn copy_to_buffer<Mut: Mutability>(&self, buffer: &StorageBuffer<Vec<u32>, Mut>) {
-        let buffer = self.gpu.binding_manager.get_resource(buffer.buffer);
+    pub fn copy_to_buffer<T: BufferBinding>(&self, buffer: &T) {
+        let buffer = self.gpu.binding_manager.get_resource(buffer.get_id());
         let buffer = buffer.expect_buffer();
 
         self.gpu.immediate_dispatch(|encoder| {

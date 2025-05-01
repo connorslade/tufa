@@ -1,12 +1,8 @@
-@group(0) @binding(0) var<uniform> ctx: Uniform;
-
-struct Uniform {
-    transform: mat4x4f
-}
+@group(0) @binding(0) var<uniform> transform: mat4x4f;
 
 struct VertexOutput {
     @builtin(position) pos: vec4f,
-    @location(1) uv: vec2f,
+    @location(1) uv: vec2f
 }
 
 @vertex
@@ -14,7 +10,7 @@ fn vert(
     @location(0) pos: vec4f,
     @location(1) uv: vec2f
 ) -> VertexOutput {
-    return VertexOutput(ctx.transform * pos, uv);
+    return VertexOutput(transform * pos, uv);
 }
 
 @fragment

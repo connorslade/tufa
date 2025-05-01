@@ -7,6 +7,7 @@
 - Offline triangle demo
 - Added texture format type to `Texture` binding
 - Don't return Result from infallible operations
+- Allow coping texture to any buffer type
 
 ## 0.1.1 &mdash; April 28th, 2025
 

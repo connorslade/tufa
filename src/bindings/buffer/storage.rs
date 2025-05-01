@@ -19,10 +19,12 @@ use crate::{
     misc::{ids::BufferId, thread_ptr::ThreadSafePtr},
 };
 
+use super::BufferBinding;
+
 /// A storage buffer is a buffer that can be read from or written to in the shader
 pub struct StorageBuffer<T, Mut: Mutability> {
-    pub gpu: Gpu,
-    pub buffer: BufferId,
+    pub(crate) gpu: Gpu,
+    pub(crate) buffer: BufferId,
 
     _type: PhantomData<T>,
     _mut: PhantomData<Mut>,
@@ -175,6 +177,12 @@ impl Gpu {
             _type: PhantomData,
             _mut: PhantomData,
         }
+    }
+}
+
+impl<T, Mut: Mutability> BufferBinding for StorageBuffer<T, Mut> {
+    fn get_id(&self) -> BufferId {
+        self.buffer
     }
 }
 
