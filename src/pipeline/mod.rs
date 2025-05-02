@@ -1,3 +1,5 @@
+//! Compute and render pipelines.
+
 use crate::bindings::BindableResourceId;
 
 pub mod compute;

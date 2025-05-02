@@ -1,3 +1,5 @@
+//! Texture sampler.
+
 use wgpu::{AddressMode, BindingType, FilterMode, SamplerBindingType, SamplerDescriptor};
 
 use crate::{gpu::Gpu, misc::ids::SamplerId};

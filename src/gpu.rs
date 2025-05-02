@@ -1,3 +1,5 @@
+//! Main way of interacting with tufa.
+
 use std::{mem, ops::Deref, sync::Arc};
 
 use anyhow::{Context, Result};

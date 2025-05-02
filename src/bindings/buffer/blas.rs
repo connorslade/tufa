@@ -14,6 +14,9 @@ use crate::{
     misc::ids::BufferId,
 };
 
+/// Bottom level acceleration structure buffer.
+///
+/// See [`crate::bindings::acceleration_structure`] for more information on acceleration structures.
 pub struct BlasBuffer<T> {
     gpu: Gpu,
     buffer: BufferId,

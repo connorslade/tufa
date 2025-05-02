@@ -15,6 +15,7 @@ use crate::{
 
 use super::BufferBinding;
 
+/// Represents the vertices of a mesh for rendering.
 pub struct VertexBuffer<T> {
     gpu: Gpu,
     buffer: BufferId,

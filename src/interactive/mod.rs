@@ -1,3 +1,5 @@
+//! Window management and egui integration for simple applications.
+
 use ::egui::Context;
 use wgpu::RenderPass;
 use winit::event::{DeviceEvent, DeviceId, WindowEvent};

@@ -14,7 +14,7 @@ pub mod collection;
 pub(crate) mod manager;
 pub mod texture;
 
-/// A resource that can be bound to a shader
+/// A resource that can be bound to a pipline.
 pub trait Bindable {
     fn resource_id(&self) -> BindableResourceId;
     fn binding_type(&self) -> BindingType;
@@ -23,6 +23,7 @@ pub trait Bindable {
     }
 }
 
+/// The ID that maps to the [`BindableResource`] through the binding manager.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum BindableResourceId {
     Buffer(BufferId),
@@ -33,6 +34,7 @@ pub enum BindableResourceId {
     TextureCollection(TextureCollectionId),
 }
 
+/// Any resource that can be bound to a pipline.
 pub enum BindableResource {
     Buffer(Buffer),
     Texture(TextureView),

@@ -1,3 +1,5 @@
+//! Textures are like buffers optimized for image data and with automatic interpolation.
+
 use std::marker::PhantomData;
 
 use format::TextureFormat;
@@ -16,6 +18,7 @@ pub mod format;
 mod sampler;
 pub use sampler::Sampler;
 
+/// A 2D texture.
 pub struct Texture<Format: TextureFormat> {
     gpu: Gpu,
 

@@ -1,3 +1,5 @@
+//! The pixel format of a texture.
+
 use crate::{DEPTH_TEXTURE_FORMAT, TEXTURE_FORMAT};
 
 pub trait TextureFormat {

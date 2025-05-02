@@ -1,3 +1,5 @@
+//! A collection of textures...
+
 use std::num::NonZeroU32;
 
 use wgpu::{BindingType, TextureSampleType, TextureViewDimension};

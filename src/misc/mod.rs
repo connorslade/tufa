@@ -1,3 +1,5 @@
+//! Random stuff.
+
 pub mod camera;
 pub(crate) mod default_buffer;
 pub(crate) mod ids;

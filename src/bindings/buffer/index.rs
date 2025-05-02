@@ -12,6 +12,7 @@ use crate::{
 
 use super::BufferBinding;
 
+/// Represents the indices of a mesh for rendering.
 pub struct IndexBuffer {
     gpu: Gpu,
     buffer: BufferId,
