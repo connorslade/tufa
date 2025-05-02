@@ -9,7 +9,10 @@ use wgpu::{
 };
 
 use crate::{
-    bindings::{manager::BindingManager, IndexBuffer, VertexBuffer},
+    bindings::{
+        buffer::{IndexBuffer, VertexBuffer},
+        manager::BindingManager,
+    },
     misc::default_buffer::DefaultBuffers,
     pipeline::render::Vertex,
 };

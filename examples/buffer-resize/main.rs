@@ -1,7 +1,7 @@
 use anyhow::Result;
 
 use tufa::{
-    bindings::mutability::Mutable,
+    bindings::buffer::mutability::Mutable,
     export::{encase::ShaderType, nalgebra::Vector3, wgpu::include_wgsl},
     gpu::Gpu,
 };

@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.3 &mdash; Coming Soon
+
+- Reorganize buffer modules
+- Add crate prelude
+- Start writing documentation!
+
 ## 0.1.2 &mdash; March 1st, 2025
 
 - Enable `interactive` feature in docs.rs build

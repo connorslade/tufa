@@ -1,7 +1,7 @@
 use anyhow::Result;
 
 use tufa::{
-    bindings::UniformBuffer,
+    bindings::buffer::UniformBuffer,
     export::{
         egui::{self, Context, DragValue, Slider},
         encase::ShaderType,

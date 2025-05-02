@@ -4,7 +4,7 @@ use anyhow::{Ok, Result};
 use encase::ShaderType;
 use rand::Rng;
 use tufa::{
-    bindings::{mutability::Mutable, StorageBuffer, UniformBuffer},
+    bindings::buffer::{mutability::Mutable, StorageBuffer, UniformBuffer},
     export::{
         egui::{emath::Numeric, Context, Slider, Ui, Window},
         nalgebra::{Vector2, Vector3},

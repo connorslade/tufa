@@ -4,8 +4,8 @@ use wgpu::{
 };
 
 use crate::{
-    bindings::{
-        texture::format::{Depth, Rgba8},
+    bindings::texture::{
+        format::{Depth, Rgba8},
         Texture,
     },
     gpu::Gpu,

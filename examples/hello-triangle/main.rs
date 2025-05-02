@@ -1,7 +1,7 @@
 use anyhow::{Ok, Result};
 use encase::ShaderType;
 use tufa::{
-    bindings::{IndexBuffer, UniformBuffer, VertexBuffer},
+    bindings::buffer::{IndexBuffer, UniformBuffer, VertexBuffer},
     export::{
         egui::Context,
         nalgebra::{Matrix4, Vector2, Vector3, Vector4},

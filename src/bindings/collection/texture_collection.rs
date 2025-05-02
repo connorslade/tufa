@@ -3,7 +3,7 @@ use std::num::NonZeroU32;
 use wgpu::{BindingType, TextureSampleType, TextureViewDimension};
 
 use crate::{
-    bindings::{texture::format::TextureFormat, Bindable, BindableResourceId, Texture},
+    bindings::{texture::format::TextureFormat, texture::Texture, Bindable, BindableResourceId},
     gpu::Gpu,
     misc::ids::TextureCollectionId,
 };

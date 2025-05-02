@@ -3,7 +3,7 @@ use std::{f32::consts::TAU, time::Instant};
 use anyhow::{Ok, Result};
 use image::{ImageBuffer, Rgb};
 use tufa::{
-    bindings::mutability::Immutable,
+    bindings::buffer::mutability::Immutable,
     export::{
         nalgebra::{Matrix4, Vector2, Vector3, Vector4},
         wgpu::{include_wgsl, ShaderStages},

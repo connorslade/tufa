@@ -3,7 +3,10 @@ use std::time::Instant;
 use anyhow::{Ok, Result};
 use encase::ShaderType;
 use tufa::{
-    bindings::{texture::format::Rgba8, IndexBuffer, UniformBuffer, VertexBuffer},
+    bindings::{
+        buffer::{IndexBuffer, UniformBuffer, VertexBuffer},
+        texture::format::Rgba8,
+    },
     export::{
         egui::{Context, Key, Window},
         nalgebra::{Matrix4, Vector2, Vector3, Vector4},

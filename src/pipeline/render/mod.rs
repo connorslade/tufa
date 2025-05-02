@@ -12,7 +12,10 @@ use wgpu::{
 };
 
 use crate::{
-    bindings::{Bindable, BindableResourceId, IndexBuffer, VertexBuffer},
+    bindings::{
+        buffer::{IndexBuffer, VertexBuffer},
+        Bindable, BindableResourceId,
+    },
     gpu::Gpu,
     misc::ids::PipelineId,
     DEPTH_TEXTURE_FORMAT, TEXTURE_FORMAT,

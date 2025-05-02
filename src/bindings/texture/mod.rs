@@ -13,6 +13,8 @@ use crate::{gpu::Gpu, misc::ids::TextureId};
 use super::{buffer::BufferBinding, Bindable, BindableResourceId};
 
 pub mod format;
+mod sampler;
+pub use sampler::Sampler;
 
 pub struct Texture<Format: TextureFormat> {
     gpu: Gpu,

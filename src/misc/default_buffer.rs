@@ -1,7 +1,7 @@
 use std::sync::OnceLock;
 
 use crate::{
-    bindings::{IndexBuffer, VertexBuffer},
+    bindings::buffer::{IndexBuffer, VertexBuffer},
     gpu::Gpu,
     pipeline::render::{
         consts::{QUAD_INDEX, QUAD_VERTEX},

@@ -2,7 +2,7 @@ use anyhow::Result;
 
 use image::{ImageBuffer, Rgb};
 use tufa::{
-    bindings::mutability::Mutable,
+    bindings::buffer::mutability::Mutable,
     export::{
         encase::ShaderType,
         nalgebra::{Vector2, Vector3},

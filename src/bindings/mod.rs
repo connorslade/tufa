@@ -1,3 +1,5 @@
+//! Items that can be bound to shaders. Includes textures, buffers of all kinds, and more!
+
 use std::num::NonZeroU32;
 
 use wgpu::{BindingType, Buffer, Sampler as WSampler, TextureView, TlasPackage};
@@ -7,21 +9,10 @@ use crate::misc::ids::{
 };
 
 pub mod acceleration_structure;
-mod buffer;
-mod collection;
-pub mod manager;
-mod sampler;
+pub mod buffer;
+pub mod collection;
+pub(crate) mod manager;
 pub mod texture;
-
-pub use buffer::blas::BlasBuffer;
-pub use buffer::index::IndexBuffer;
-pub use buffer::mutability;
-pub use buffer::storage::StorageBuffer;
-pub use buffer::uniform::UniformBuffer;
-pub use buffer::vertex::VertexBuffer;
-pub use collection::texture_collection::TextureCollection;
-pub use sampler::Sampler;
-pub use texture::Texture;
 
 /// A resource that can be bound to a shader
 pub trait Bindable {

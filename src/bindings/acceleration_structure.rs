@@ -1,3 +1,7 @@
+//! Used for accelerating ray-triangle intersection tests for ray tracing.
+//!
+//! Just see [@connorslade/ray-tracing](https://github.com/connorslade/ray-tracing/blob/5b50604c880f0dda8721d2b613221b3a0f9670c8/src/scene.rs#L50) until I get around to documenting this module...
+
 use std::iter;
 
 use encase::{internal::WriteInto, ShaderSize, ShaderType};
@@ -16,7 +20,7 @@ use crate::{
     misc::ids::AccelerationStructureId,
 };
 
-use super::BlasBuffer;
+use super::buffer::BlasBuffer;
 
 pub struct AccelerationStructure<Vertex> {
     gpu: Gpu,
