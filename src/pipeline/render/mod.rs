@@ -25,7 +25,7 @@ use super::PipelineStatus;
 pub mod consts;
 pub mod pass;
 
-#[derive(ShaderType)]
+#[derive(Clone, Debug, ShaderType)]
 pub struct Vertex {
     pub position: Vector4<f32>,
     pub uv: Vector2<f32>,
@@ -104,6 +104,7 @@ impl RenderPipeline {
         instances: &VertexBuffer<T>,
         range: Range<u32>,
     ) {
+        self.recreate_bind_group();
         let (vertex, index) = self.gpu.default_buffers();
 
         render_pass.set_pipeline(&self.pipeline);

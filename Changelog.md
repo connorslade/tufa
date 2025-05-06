@@ -5,6 +5,8 @@
 - Reorganize buffer modules
 - Add crate prelude
 - Start writing documentation!
+- Impl clone and Debug for render::Vertex
+- Recreate bind groups before `instance_quad`
 
 ## 0.1.2 &mdash; March 1st, 2025
 

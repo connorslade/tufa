@@ -29,6 +29,8 @@ impl<T> VertexBuffer<T> {
         })
     }
 
+    // todo: make condensed vertex buffers that just bytemuck cast?
+
     pub fn upload(&self, data: &[T])
     where
         T: ShaderType + ShaderSize + WriteInto,
