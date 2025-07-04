@@ -24,7 +24,7 @@ pub struct BlasBuffer<T> {
 }
 
 impl<T> BlasBuffer<T> {
-    pub(crate) fn get(&self) -> MappedRwLockReadGuard<Buffer> {
+    pub(crate) fn get(&self) -> MappedRwLockReadGuard<'_, Buffer> {
         MappedRwLockReadGuard::map(self.gpu.binding_manager.get_resource(self.buffer), |x| {
             x.expect_buffer()
         })

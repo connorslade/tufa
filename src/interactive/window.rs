@@ -221,7 +221,7 @@ impl Gpu {
         &self,
         attributes: WindowAttributes,
         interactive: T,
-    ) -> Window<T> {
+    ) -> Window<'_, T> {
         Window {
             app: Application {
                 gpu: self.clone(),

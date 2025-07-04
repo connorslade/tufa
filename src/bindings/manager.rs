@@ -98,7 +98,7 @@ impl BindingManager {
         self.pipelines.write().insert(id, status);
     }
 
-    pub(crate) fn get_pipeline(&self, id: PipelineId) -> MappedRwLockReadGuard<PipelineStatus> {
+    pub(crate) fn get_pipeline(&self, id: PipelineId) -> MappedRwLockReadGuard<'_, PipelineStatus> {
         RwLockReadGuard::map(self.pipelines.read(), |x| &x[&id])
     }
 
@@ -117,7 +117,7 @@ impl BindingManager {
     pub(crate) fn get_resource(
         &self,
         id: impl Into<BindableResourceId>,
-    ) -> MappedRwLockReadGuard<BindableResource> {
+    ) -> MappedRwLockReadGuard<'_, BindableResource> {
         RwLockReadGuard::map(self.resources.read(), |x| &x[&id.into()])
     }
 
@@ -132,7 +132,7 @@ impl BindingManager {
     pub(crate) fn get_collection(
         &self,
         id: TextureCollectionId,
-    ) -> MappedRwLockReadGuard<Vec<TextureId>> {
+    ) -> MappedRwLockReadGuard<'_, Vec<TextureId>> {
         RwLockReadGuard::map(self.collections.read(), |x| &x[&id])
     }
 

@@ -31,7 +31,7 @@ pub struct StorageBuffer<T, Mut: Mutability> {
 }
 
 impl<T: ShaderType + WriteInto + CreateFrom, Mut: Mutability> StorageBuffer<T, Mut> {
-    fn get(&self) -> MappedRwLockReadGuard<Buffer> {
+    fn get(&self) -> MappedRwLockReadGuard<'_, Buffer> {
         MappedRwLockReadGuard::map(self.gpu.binding_manager.get_resource(self.buffer), |x| {
             x.expect_buffer()
         })
