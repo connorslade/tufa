@@ -7,6 +7,8 @@
 - Start writing documentation!
 - Impl clone and Debug for render::Vertex
 - Recreate bind groups before `instance_quad`
+- Set z coords of default quad to 0
+- Bump encase to v0.11.1
 
 ## 0.1.2 &mdash; March 1st, 2025
 
