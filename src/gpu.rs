@@ -83,14 +83,11 @@ impl GpuBuilder {
         .context("Error requesting adapter")?;
         let info = adapter.get_info();
 
-        let (device, queue) = pollster::block_on(adapter.request_device(
-            &DeviceDescriptor {
-                required_limits: self.limits,
-                required_features: self.features,
-                ..Default::default()
-            },
-            None,
-        ))?;
+        let (device, queue) = pollster::block_on(adapter.request_device(&DeviceDescriptor {
+            required_limits: self.limits,
+            required_features: self.features,
+            ..Default::default()
+        }))?;
 
         Ok(Gpu {
             inner: Arc::new(GpuInner {
@@ -128,12 +125,17 @@ impl Gpu {
 
     /// Processes any resource cleanups and mapping callbacks
     pub fn poll(&self) {
-        self.device.poll(MaintainBase::Poll);
+        let _ = self.device.poll(MaintainBase::Poll).unwrap();
     }
 
     /// Waits for all resource cleanups and mapping callbacks to complete
     pub fn wait(&self) {
-        while !self.device.poll(MaintainBase::Wait).is_queue_empty() {}
+        while !self
+            .device
+            .poll(MaintainBase::Wait)
+            .unwrap()
+            .is_queue_empty()
+        {}
     }
 }
 

@@ -91,7 +91,8 @@ impl<T: ShaderType + WriteInto + CreateFrom, Mut: Mutability> StorageBuffer<T, M
         let (tx, rx) = crossbeam_channel::bounded(1);
         slice.map_async(MapMode::Read, move |_| tx.send(()).unwrap());
 
-        self.gpu.device.poll(MaintainBase::Wait);
+        let poll = self.gpu.device.poll(MaintainBase::Wait).unwrap();
+        assert!(poll.wait_finished());
         rx.recv().unwrap();
 
         let data = slice.get_mapped_range().to_vec();

@@ -182,7 +182,9 @@ impl<Vertex> Bindable for AccelerationStructure<Vertex> {
     }
 
     fn binding_type(&self) -> BindingType {
-        BindingType::AccelerationStructure
+        BindingType::AccelerationStructure {
+            vertex_return: false,
+        }
     }
 }
 
