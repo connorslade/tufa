@@ -10,7 +10,7 @@
 - Set z coords of default quad to 0
 - Bump deps, mainly egui to v0.32
 
-## 0.1.2 &mdash; March 1st, 2025
+## 0.1.2 &mdash; May 1st, 2025
 
 - Enable `interactive` feature in docs.rs build
 - Added support for custom render passes

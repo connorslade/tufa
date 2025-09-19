@@ -72,7 +72,7 @@ fn main() -> Result<()> {
 }
 
 impl Interactive for App {
-    fn render(&mut self, gcx: GraphicsCtx, render_pass: &mut RenderPass) {
+    fn render(&mut self, _gcx: GraphicsCtx, render_pass: &mut RenderPass) {
         self.pipeline
             .draw(render_pass, &self.index, &self.vertex, 0..3);
     }
